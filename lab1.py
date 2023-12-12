@@ -61,7 +61,7 @@ class Vegetable:
         нарезать овощ
         :return: ваши овощ нарезан
         Примеры:
-        >>> pepper = Fruit("pepper", "red")
+        >>> pepper = Vegetable("pepper", "red")
         >>> pepper.slice()
         """
 
@@ -70,7 +70,7 @@ class Vegetable:
         съесть овощ
         :return: овощ съели
         Примеры:
-        >>> pepper = Fruit("pepper", "red")
+        >>> pepper = Vegetable("pepper", "red")
         >>> pepper.eat()
         """
 class Tree:
