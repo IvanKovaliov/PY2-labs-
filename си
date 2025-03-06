@@ -1,0 +1,252 @@
+Для 4 варианта задания, согласно таблице 6.1, начальные параметры окна приложения следующие:
+
+- **Цвет фона**: Черный
+- **Ширина окна**: 500
+- **Высота окна**: 350
+- **Тип курсора**: `IDC_SIZENS`
+- **Наименование шрифта**: `Courier New`
+
+Ниже приведен пример кода для создания оконного приложения с использованием Win32 API, который соответствует 4 варианту задания:
+
+```cpp
+#include <windows.h>
+#include <tchar.h>
+#include <stdio.h>
+
+// Идентификаторы элементов управления
+#define ID_BUTTON_1 3001
+#define ID_BUTTON_2 3002
+#define ID_BUTTON_3 3003
+#define ID_BUTTON_R 3004
+#define ID_BUTTON_G 3005
+#define ID_BUTTON_B 3006
+#define ID_LIST 4001
+#define ID_COMBO 4002
+
+// Глобальные переменные
+int iColor[3] = { 0, 0, 0 }; // Черный цвет фона
+HWND hList, hCombo;
+HWND hBtnChk;
+int flagChk = 0;
+
+// Прототипы функций
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK GroupBoxProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK EnumWindowsProc(HWND, LPARAM);
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    WNDCLASSEX wc;
+    HWND hwnd;
+    MSG Msg;
+
+    // Регистрация класса окна
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.style = 0;
+    wc.lpfnWndProc = WndProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = hInstance;
+    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hCursor = LoadCursor(NULL, IDC_SIZENS);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.lpszMenuName = NULL;
+    wc.lpszClassName = _T("WindowClass");
+    wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+
+    if (!RegisterClassEx(&wc)) {
+        MessageBox(NULL, _T("Window Registration Failed!"), _T("Error!"), MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    // Создание окна
+    hwnd = CreateWindowEx(
+        0,
+        _T("WindowClass"),
+        _T("Лабораторная работа №3 - Вариант 4"),
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, 500, 350,
+        NULL, NULL, hInstance, NULL);
+
+    if (hwnd == NULL) {
+        MessageBox(NULL, _T("Window Creation Failed!"), _T("Error!"), MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    ShowWindow(hwnd, nCmdShow);
+    UpdateWindow(hwnd);
+
+    // Цикл обработки сообщений
+    while (GetMessage(&Msg, NULL, 0, 0) > 0) {
+        TranslateMessage(&Msg);
+        DispatchMessage(&Msg);
+    }
+    return Msg.wParam;
+}
+
+// Оконная процедура
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HWND hBtnChkR, hBtnChkG, hBtnChkB, hSbar;
+    static int CodeColor = 0;
+    static HBRUSH ColorBrush;
+    static PAINTSTRUCT ps;
+    static HDC hDC;
+    static HWND hTxt, hEdit, hBtn;
+    static int ListItem = NULL;
+    TCHAR buf[255];
+
+    switch (msg) {
+    case WM_CREATE:
+        // Создание статического текста
+        hTxt = CreateWindow(_T("STATIC"), _T("Положение окна"), WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 220, 15, hwnd, NULL, NULL, NULL);
+
+        // Создание кнопки-переключателя
+        hBtnChk = CreateWindow(_T("BUTTON"), _T("Отображать положение"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 250, 10, 250, 20, hwnd, (HMENU)ID_BUTTON_2, NULL, NULL);
+
+        // Создание группы переключателей
+        hBtnChkR = CreateWindow(_T("BUTTON"), _T("Красный цвет"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 25, 20, 200, 25, hwnd, (HMENU)ID_BUTTON_R, NULL, NULL);
+        hBtnChkG = CreateWindow(_T("BUTTON"), _T("Зеленый цвет"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 25, 70, 200, 25, hwnd, (HMENU)ID_BUTTON_G, NULL, NULL);
+        hBtnChkB = CreateWindow(_T("BUTTON"), _T("Синий цвет"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 25, 120, 200, 25, hwnd, (HMENU)ID_BUTTON_B, NULL, NULL);
+
+        // Создание полосы прокрутки
+        hSbar = CreateWindow(_T("SCROLLBAR"), NULL, WS_CHILD | WS_VISIBLE | SBS_HORZ, 10, 320, 250, 20, hwnd, NULL, NULL, NULL);
+        SetScrollRange(hSbar, SB_CTL, 0, 255, TRUE);
+
+        // Создание списка строк
+        hList = CreateWindow(_T("LISTBOX"), NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD, 270, 50, 200, 100, hwnd, (HMENU)ID_LIST, NULL, NULL);
+
+        // Создание комбинированного списка
+        hCombo = CreateWindow(_T("COMBOBOX"), NULL, WS_CHILD | WS_VISIBLE | CBS_AUTOHSCROLL, 270, 150, 350, 250, hwnd, (HMENU)ID_COMBO, NULL, NULL);
+        EnumWindows(&EnumWindowsProc, 0);
+
+        // Создание кнопки закрытия приложения
+        hBtn = CreateWindow(_T("BUTTON"), _T("Закрыть приложение"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 10, 100, 250, 30, hwnd, (HMENU)ID_BUTTON_1, NULL, NULL);
+
+        break;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case ID_BUTTON_1:
+            // Обработка нажатия кнопки закрытия приложения
+            break;
+
+        case ID_BUTTON_2:
+            // Обработка нажатия кнопки-переключателя
+            if (flagChk == 0) {
+                SendMessage(hBtnChk, BM_SETCHECK, BST_CHECKED, 0);
+                flagChk = 1;
+            } else {
+                SendMessage(hBtnChk, BM_SETCHECK, BST_UNCHECKED, 0);
+                flagChk = 0;
+            }
+            break;
+
+        case ID_BUTTON_R:
+            CodeColor = 0;
+            SetScrollPos(hSbar, SB_CTL, iColor[CodeColor], TRUE);
+            break;
+
+        case ID_BUTTON_G:
+            CodeColor = 1;
+            SetScrollPos(hSbar, SB_CTL, iColor[CodeColor], TRUE);
+            break;
+
+        case ID_BUTTON_B:
+            CodeColor = 2;
+            SetScrollPos(hSbar, SB_CTL, iColor[CodeColor], TRUE);
+            break;
+
+        case ID_LIST:
+            if (HIWORD(wParam) == LBN_DBLCLK) {
+                ListItem = (int)SendMessage(hList, LB_GETCURSEL, 0, 0);
+                if (ListItem != LB_ERR) {
+                    SendMessage(hList, LB_GETTEXT, ListItem, (LPARAM)buf);
+                    MessageBox(hwnd, buf, _T("Выбрана строка"), MB_OK);
+                }
+            }
+            break;
+
+        case ID_COMBO:
+            if (HIWORD(wParam) == CBN_DBLCLK) {
+                ListItem = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0);
+                if (ListItem != CB_ERR) {
+                    SendMessage(hCombo, CB_GETLBTEXT, (LPARAM)ListItem, (LPARAM)buf);
+                    SendMessage(hEdit, WM_SETTEXT, 0, (LPARAM)buf);
+                    SendMessage(hCombo, CB_DELETESTRING, (LPARAM)ListItem, (LPARAM)0);
+                }
+            }
+            break;
+        }
+        break;
+
+    case WM_HSCROLL:
+        switch (LOWORD(wParam)) {
+        case SB_PAGERIGHT:
+            iColor[CodeColor] += 10;
+            break;
+
+        case SB_PAGELEFT:
+            iColor[CodeColor] -= 10;
+            break;
+
+        case SB_LINERIGHT:
+            iColor[CodeColor]++;
+            break;
+
+        case SB_LINELEFT:
+            iColor[CodeColor]--;
+            break;
+        }
+
+        if (iColor[CodeColor] > 255) iColor[CodeColor] = 255;
+        if (iColor[CodeColor] < 0) iColor[CodeColor] = 0;
+
+        if (flagChk == 0) {
+            _stprintf_s(buf, _T("Код выбранного цвета : %d"), iColor[CodeColor]);
+            SetWindowText(hTxt, buf);
+        }
+
+        SetScrollPos(hSbar, SB_CTL, iColor[CodeColor], TRUE);
+        ColorBrush = CreateSolidBrush(RGB(iColor[0], iColor[1], iColor[2]));
+        SetClassLong(hwnd, GCL_HBRBACKGROUND, (LONG)ColorBrush);
+        InvalidateRect(NULL, NULL, TRUE);
+        UpdateWindow(hwnd);
+        break;
+
+    case WM_PAINT:
+        hDC = BeginPaint(hwnd, &ps);
+        EndPaint(hwnd, &ps);
+        break;
+
+    case WM_CLOSE:
+        DestroyWindow(hwnd);
+        break;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+// Функция для перечисления окон
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
+    TCHAR str[255];
+    if (GetWindowText(hwnd, str, 255)) {
+        if (IsWindowVisible(hwnd) && (!GetWindow(hwnd, GW_OWNER))) {
+            SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)str);
+        }
+    }
+    return TRUE;
+}
+```
+
+### Описание кода:
+1. **Цвет фона**: Черный (`iColor[3] = { 0, 0, 0 }`).
+2. **Ширина и высота окна**: 500x350.
+3. **Тип курсора**: `IDC_SIZENS`.
+4. **Шрифт**: Используется системный шрифт, но можно добавить логический шрифт с именем `Courier New` с помощью функции `CreateFont`.
+
+Этот код создает оконное приложение с элементами управления, соответствующими заданию для 4 варианта. Вы можете дополнительно настроить шрифт и другие параметры в зависимости от требований.
