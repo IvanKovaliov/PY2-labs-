@@ -42,12 +42,20 @@ public class LatinLettersArray
         int count = 0;
         foreach (char letter in letters)
         {
-            if ("BCDFGHJKLMNPQRSTVWXYZ".Contains(letter))
+            // Проверяем, является ли буква согласной
+            if (IsConsonant(letter))
             {
                 count++;
             }
         }
         return count;
+    }
+
+    private bool IsConsonant(char letter)
+    {
+        // Список согласных букв
+        string consonants = "BCDFGHJKLMNPQRSTVWXYZ";
+        return consonants.Contains(letter);
     }
 
     public void PrintArray()
