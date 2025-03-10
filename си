@@ -26,7 +26,7 @@ public class Data : IComparable<Data>
     // Переопределение метода ToString для удобного вывода
     public override string ToString()
     {
-        return $"Field1: {Field1}, Field2: {Field2}, Field3: {Field3}";
+        return string.Format("Field1: {0}, Field2: {1}, Field3: {2}", Field1, Field2, Field3);
     }
 }
 
@@ -87,7 +87,7 @@ class Program
         Console.WriteLine("Исходный список:");
         foreach (var data in list)
         {
-            Console.WriteLine(data);
+            Console.WriteLine(data.ToString());
         }
 
         // Сортировка списка по полю Field2 (string) по умолчанию
@@ -95,7 +95,7 @@ class Program
         Console.WriteLine("\nОтсортированный список по Field2 (string):");
         foreach (var data in list)
         {
-            Console.WriteLine(data);
+            Console.WriteLine(data.ToString());
         }
 
         // Сортировка списка по полю Field1 (char)
@@ -103,7 +103,7 @@ class Program
         Console.WriteLine("\nОтсортированный список по Field1 (char):");
         foreach (var data in list)
         {
-            Console.WriteLine(data);
+            Console.WriteLine(data.ToString());
         }
 
         // Сортировка списка по полю Field3 (long)
@@ -111,7 +111,7 @@ class Program
         Console.WriteLine("\nОтсортированный список по Field3 (long):");
         foreach (var data in list)
         {
-            Console.WriteLine(data);
+            Console.WriteLine(data.ToString());
         }
     }
 }
