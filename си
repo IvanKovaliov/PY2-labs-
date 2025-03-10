@@ -1,55 +1,73 @@
 using System;
-using System.Linq;
 
-public class LatinLettersArray
+class SquareMatrix
 {
-    private char[] array;
+    private int[,] matrix;
+    private int size;
 
-    public LatinLettersArray(int n)
+    public SquareMatrix(int size)
     {
+        this.size = size;
+        matrix = new int[size, size];
         Random random = new Random();
-        array = new char[n];
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < size; i++)
         {
-            array[i] = (char)random.Next(65, 91); // Генерация прописных латинских букв
+            for (int j = 0; j < size; j++)
+            {
+                matrix[i, j] = random.Next(-3, 4); // Генерация чисел от -3 до 3
+            }
         }
     }
 
-    public void SwapSecondAndSecondLast()
+    public int SumOfMainDiagonal()
     {
-        if (array.Length < 2)
-            return;
-
-        int secondIndex = 1;
-        int secondLastIndex = array.Length - 2;
-
-        char temp = array[secondIndex];
-        array[secondIndex] = array[secondLastIndex];
-        array[secondLastIndex] = temp;
-    }
-
-    public int LastIndexOfY()
-    {
-        for (int i = array.Length - 1; i >= 0; i--)
+        int sum = 0;
+        for (int i = 0; i < size; i++)
         {
-            if (array[i] == 'Y')
-                return i;
+            sum += matrix[i, i];
         }
-        return -1; // Если символ 'Y' не найден
+        return sum;
     }
 
-    public int ConsonantCount
+    public void SwapRows(int row1, int row2)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            int temp = matrix[row1, j];
+            matrix[row1, j] = matrix[row2, j];
+            matrix[row2, j] = temp;
+        }
+    }
+
+    public int SumOfPositiveElements
     {
         get
         {
-            char[] consonants = { 'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z' };
-            return array.Count(c => consonants.Contains(c));
+            int sum = 0;
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    if (matrix[i, j] > 0)
+                    {
+                        sum += matrix[i, j];
+                    }
+                }
+            }
+            return sum;
         }
     }
 
-    public void PrintArray()
+    public void PrintMatrix()
     {
-        Console.WriteLine(string.Join(" ", array));
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                Console.Write(matrix[i, j] + "\t");
+            }
+            Console.WriteLine();
+        }
     }
 }
 
@@ -57,17 +75,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        LatinLettersArray array = new LatinLettersArray(10);
-        Console.WriteLine("Исходный массив:");
-        array.PrintArray();
+        SquareMatrix matrix = new SquareMatrix(4);
+        Console.WriteLine("Исходная матрица:");
+        matrix.PrintMatrix();
 
-        array.SwapSecondAndSecondLast();
-        Console.WriteLine("Массив после обмена второго и предпоследнего элементов:");
-        array.PrintArray();
+        Console.WriteLine("Сумма элементов главной диагонали: " + matrix.SumOfMainDiagonal());
 
-        int lastYIndex = array.LastIndexOfY();
-        Console.WriteLine(lastYIndex != -1 ? $"Индекс последнего 'Y': {lastYIndex}" : "Символ 'Y' не найден");
+        matrix.SwapRows(0, 2);
+        Console.WriteLine("Матрица после замены строк 0 и 2:");
+        matrix.PrintMatrix();
 
-        Console.WriteLine($"Количество согласных букв: {array.ConsonantCount}");
+        Console.WriteLine("Сумма всех положительных элементов: " + matrix.SumOfPositiveElements);
     }
 }
