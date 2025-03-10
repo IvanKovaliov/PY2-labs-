@@ -1,68 +1,55 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 
-// Класс Data с полями char, string, long
-public class Data : IComparable<Data>
+public class LatinLettersArray
 {
-    public char Field1 { get; set; }
-    public string Field2 { get; set; }
-    public long Field3 { get; set; }
+    private char[] array;
 
-    // Конструктор для удобной инициализации
-    public Data(char field1, string field2, long field3)
+    public LatinLettersArray(int n)
     {
-        Field1 = field1;
-        Field2 = field2;
-        Field3 = field3;
+        Random random = new Random();
+        array = new char[n];
+        for (int i = 0; i < n; i++)
+        {
+            array[i] = (char)random.Next(65, 91); // Генерация прописных латинских букв
+        }
     }
 
-    // Реализация метода CompareTo для сортировки по полю Field2 (string) по умолчанию
-    public int CompareTo(Data other)
+    public void SwapSecondAndSecondLast()
     {
-        return this.Field2.CompareTo(other.Field2);
+        if (array.Length < 2)
+            return;
+
+        int secondIndex = 1;
+        int secondLastIndex = array.Length - 2;
+
+        char temp = array[secondIndex];
+        array[secondIndex] = array[secondLastIndex];
+        array[secondLastIndex] = temp;
     }
 
-    // Переопределение метода ToString для удобного вывода
-    public override string ToString()
+    public int LastIndexOfY()
     {
-        return string.Format("Field1: {0}, Field2: {1}, Field3: {2}", Field1, Field2, Field3);
-    }
-}
-
-// Класс DataList, содержащий список объектов Data
-public class DataList : IEnumerable<Data>
-{
-    private List<Data> dataList = new List<Data>();
-
-    // Метод для добавления одного элемента в список
-    public void Add(Data data)
-    {
-        dataList.Add(data);
+        for (int i = array.Length - 1; i >= 0; i--)
+        {
+            if (array[i] == 'Y')
+                return i;
+        }
+        return -1; // Если символ 'Y' не найден
     }
 
-    // Метод для добавления нескольких элементов в список
-    public void AddRange(IEnumerable<Data> dataCollection)
+    public int ConsonantCount
     {
-        dataList.AddRange(dataCollection);
+        get
+        {
+            char[] consonants = { 'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z' };
+            return array.Count(c => consonants.Contains(c));
+        }
     }
 
-    // Метод для сортировки списка по указанному полю
-    public void Sort(Comparison<Data> comparison)
+    public void PrintArray()
     {
-        dataList.Sort(comparison);
-    }
-
-    // Реализация интерфейса IEnumerable<Data>
-    public IEnumerator<Data> GetEnumerator()
-    {
-        return dataList.GetEnumerator();
-    }
-
-    // Реализация необобщенного метода GetEnumerator
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
+        Console.WriteLine(string.Join(" ", array));
     }
 }
 
@@ -70,48 +57,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Создание объекта DataList
-        DataList list = new DataList();
+        LatinLettersArray array = new LatinLettersArray(10);
+        Console.WriteLine("Исходный массив:");
+        array.PrintArray();
 
-        // Добавление нескольких объектов Data в список
-        list.AddRange(new List<Data>
-        {
-            new Data('A', "Zebra", 100),
-            new Data('B', "Apple", 200),
-            new Data('C', "Banana", 300),
-            new Data('D', "Orange", 400),
-            new Data('E', "Grape", 500)
-        });
+        array.SwapSecondAndSecondLast();
+        Console.WriteLine("Массив после обмена второго и предпоследнего элементов:");
+        array.PrintArray();
 
-        // Вывод исходного списка
-        Console.WriteLine("Исходный список:");
-        foreach (var data in list)
-        {
-            Console.WriteLine(data.ToString());
-        }
+        int lastYIndex = array.LastIndexOfY();
+        Console.WriteLine(lastYIndex != -1 ? $"Индекс последнего 'Y': {lastYIndex}" : "Символ 'Y' не найден");
 
-        // Сортировка списка по полю Field2 (string) по умолчанию
-        list.Sort((x, y) => x.CompareTo(y));
-        Console.WriteLine("\nОтсортированный список по Field2 (string):");
-        foreach (var data in list)
-        {
-            Console.WriteLine(data.ToString());
-        }
-
-        // Сортировка списка по полю Field1 (char)
-        list.Sort((x, y) => x.Field1.CompareTo(y.Field1));
-        Console.WriteLine("\nОтсортированный список по Field1 (char):");
-        foreach (var data in list)
-        {
-            Console.WriteLine(data.ToString());
-        }
-
-        // Сортировка списка по полю Field3 (long)
-        list.Sort((x, y) => x.Field3.CompareTo(y.Field3));
-        Console.WriteLine("\nОтсортированный список по Field3 (long):");
-        foreach (var data in list)
-        {
-            Console.WriteLine(data.ToString());
-        }
+        Console.WriteLine($"Количество согласных букв: {array.ConsonantCount}");
     }
 }
