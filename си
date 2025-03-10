@@ -1,73 +1,54 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
-class SquareMatrix
+// Класс Data с полями char, string, long
+public class Data : IComparable<Data>
 {
-    private int[,] matrix;
-    private int size;
+    public char Field1 { get; set; }
+    public string Field2 { get; set; }
+    public long Field3 { get; set; }
 
-    public SquareMatrix(int size)
+    // Реализация метода CompareTo для сортировки по полю Field2 (string)
+    public int CompareTo(Data other)
     {
-        this.size = size;
-        matrix = new int[size, size];
-        Random random = new Random();
-        for (int i = 0; i < size; i++)
-        {
-            for (int j = 0; j < size; j++)
-            {
-                matrix[i, j] = random.Next(-3, 4); // Генерация чисел от -3 до 3
-            }
-        }
+        return this.Field2.CompareTo(other.Field2);
     }
 
-    public int SumOfMainDiagonal()
+    // Переопределение метода ToString для удобного вывода
+    public override string ToString()
     {
-        int sum = 0;
-        for (int i = 0; i < size; i++)
-        {
-            sum += matrix[i, i];
-        }
-        return sum;
+        return $"Field1: {Field1}, Field2: {Field2}, Field3: {Field3}";
+    }
+}
+
+// Класс DataList, содержащий список объектов Data
+public class DataList : IEnumerable<Data>
+{
+    private List<Data> dataList = new List<Data>();
+
+    // Метод для добавления элемента в список
+    public void Add(Data data)
+    {
+        dataList.Add(data);
     }
 
-    public void SwapRows(int row1, int row2)
+    // Метод для сортировки списка по полю Field2
+    public void Sort()
     {
-        for (int j = 0; j < size; j++)
-        {
-            int temp = matrix[row1, j];
-            matrix[row1, j] = matrix[row2, j];
-            matrix[row2, j] = temp;
-        }
+        dataList.Sort();
     }
 
-    public int SumOfPositiveElements
+    // Реализация интерфейса IEnumerable<Data>
+    public IEnumerator<Data> GetEnumerator()
     {
-        get
-        {
-            int sum = 0;
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < size; j++)
-                {
-                    if (matrix[i, j] > 0)
-                    {
-                        sum += matrix[i, j];
-                    }
-                }
-            }
-            return sum;
-        }
+        return dataList.GetEnumerator();
     }
 
-    public void PrintMatrix()
+    // Реализация необобщенного метода GetEnumerator
+    IEnumerator IEnumerable.GetEnumerator()
     {
-        for (int i = 0; i < size; i++)
-        {
-            for (int j = 0; j < size; j++)
-            {
-                Console.Write(matrix[i, j] + "\t");
-            }
-            Console.WriteLine();
-        }
+        return GetEnumerator();
     }
 }
 
@@ -75,16 +56,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        SquareMatrix matrix = new SquareMatrix(4);
-        Console.WriteLine("Исходная матрица:");
-        matrix.PrintMatrix();
+        // Создание объекта DataList
+        DataList list = new DataList();
 
-        Console.WriteLine("Сумма элементов главной диагонали: " + matrix.SumOfMainDiagonal());
+        // Добавление нескольких объектов Data в список
+        list.Add(new Data { Field1 = 'A', Field2 = "Zebra", Field3 = 100 });
+        list.Add(new Data { Field1 = 'B', Field2 = "Apple", Field3 = 200 });
+        list.Add(new Data { Field1 = 'C', Field2 = "Banana", Field3 = 300 });
 
-        matrix.SwapRows(0, 2);
-        Console.WriteLine("Матрица после замены строк 0 и 2:");
-        matrix.PrintMatrix();
+        // Вывод исходного списка
+        Console.WriteLine("Исходный список:");
+        foreach (var data in list)
+        {
+            Console.WriteLine(data);
+        }
 
-        Console.WriteLine("Сумма всех положительных элементов: " + matrix.SumOfPositiveElements);
+        // Сортировка списка по полю Field2
+        list.Sort();
+
+        // Вывод отсортированного списка
+        Console.WriteLine("\nОтсортированный список:");
+        foreach (var data in list)
+        {
+            Console.WriteLine(data);
+        }
     }
 }
