@@ -1,55 +1,58 @@
 using System;
-using System.Linq;
 
 public class LatinLettersArray
 {
-    private char[] array;
+    private char[] letters;
 
-    public LatinLettersArray(int n)
+    public LatinLettersArray(int size)
     {
+        letters = new char[size];
         Random random = new Random();
-        array = new char[n];
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < size; i++)
         {
-            array[i] = (char)random.Next(65, 91); // Генерация прописных латинских букв
+            letters[i] = (char)random.Next(65, 91); // Заполнение массива прописными латинскими буквами
         }
     }
 
     public void SwapSecondAndSecondLast()
     {
-        if (array.Length < 2)
+        if (letters.Length < 2)
             return;
 
         int secondIndex = 1;
-        int secondLastIndex = array.Length - 2;
+        int secondLastIndex = letters.Length - 2;
 
-        char temp = array[secondIndex];
-        array[secondIndex] = array[secondLastIndex];
-        array[secondLastIndex] = temp;
+        char temp = letters[secondIndex];
+        letters[secondIndex] = letters[secondLastIndex];
+        letters[secondLastIndex] = temp;
     }
 
-    public int LastIndexOfY()
+    public int FindLastYIndex()
     {
-        for (int i = array.Length - 1; i >= 0; i--)
+        for (int i = letters.Length - 1; i >= 0; i--)
         {
-            if (array[i] == 'Y')
+            if (letters[i] == 'Y')
                 return i;
         }
-        return -1; // Если символ 'Y' не найден
+        return -1; // Возвращает -1, если 'Y' не найден
     }
 
-    public int ConsonantCount
+    public int CountConsonants()
     {
-        get
+        int count = 0;
+        foreach (char letter in letters)
         {
-            char[] consonants = { 'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z' };
-            return array.Count(c => consonants.Contains(c));
+            if ("BCDFGHJKLMNPQRSTVWXYZ".Contains(letter))
+            {
+                count++;
+            }
         }
+        return count;
     }
 
     public void PrintArray()
     {
-        Console.WriteLine(string.Join(" ", array));
+        Console.WriteLine("Массив: " + string.Join(" ", letters));
     }
 }
 
@@ -57,7 +60,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        LatinLettersArray array = new LatinLettersArray(10);
+        Console.Write("Введите размер массива: ");
+        int size = int.Parse(Console.ReadLine());
+
+        LatinLettersArray array = new LatinLettersArray(size);
         Console.WriteLine("Исходный массив:");
         array.PrintArray();
 
@@ -65,9 +71,16 @@ class Program
         Console.WriteLine("Массив после обмена второго и предпоследнего элементов:");
         array.PrintArray();
 
-        int lastYIndex = array.LastIndexOfY();
-        Console.WriteLine(lastYIndex != -1 ? $"Индекс последнего 'Y': {lastYIndex}" : "Символ 'Y' не найден");
+        int lastYIndex = array.FindLastYIndex();
+        if (lastYIndex != -1)
+        {
+            Console.WriteLine($"Индекс последнего 'Y': {lastYIndex}");
+        }
+        else
+        {
+            Console.WriteLine("Символ 'Y' не найден в массиве.");
+        }
 
-        Console.WriteLine($"Количество согласных букв: {array.ConsonantCount}");
+        Console.WriteLine($"Количество согласных букв: {array.CountConsonants()}");
     }
 }
