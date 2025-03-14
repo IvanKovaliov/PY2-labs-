@@ -1,94 +1,283 @@
-using System;
+-- Создание базы данных
+CREATE DATABASE IF NOT EXISTS AdvancedOnlineStore;
+USE AdvancedOnlineStore;
 
-public class LatinLettersArray
-{
-    private char[] letters;
+-- Таблица категорий товаров
+CREATE TABLE IF NOT EXISTS Categories (
+    CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+    CategoryName VARCHAR(100) NOT NULL,
+    Description TEXT,
+    ParentCategoryID INT,
+    FOREIGN KEY (ParentCategoryID) REFERENCES Categories(CategoryID)
+);
 
-    public LatinLettersArray(int size)
-    {
-        letters = new char[size];
-        Random random = new Random();
-        for (int i = 0; i < size; i++)
-        {
-            letters[i] = (char)random.Next(65, 91); // Заполнение массива прописными латинскими буквами
-        }
-    }
+-- Таблица производителей
+CREATE TABLE IF NOT EXISTS Manufacturers (
+    ManufacturerID INT AUTO_INCREMENT PRIMARY KEY,
+    ManufacturerName VARCHAR(100) NOT NULL,
+    ContactInfo TEXT,
+    Website VARCHAR(255)
+);
 
-    public void SwapSecondAndSecondLast()
-    {
-        if (letters.Length < 2)
-            return;
+-- Таблица товаров
+CREATE TABLE IF NOT EXISTS Products (
+    ProductID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductName VARCHAR(255) NOT NULL,
+    Description TEXT,
+    Price DECIMAL(10, 2) NOT NULL,
+    StockQuantity INT NOT NULL,
+    CategoryID INT,
+    ManufacturerID INT,
+    WarrantyPeriod INT, -- Гарантия в месяцах
+    IsActive BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID),
+    FOREIGN KEY (ManufacturerID) REFERENCES Manufacturers(ManufacturerID)
+);
 
-        int secondIndex = 1;
-        int secondLastIndex = letters.Length - 2;
+-- Таблица характеристик товаров
+CREATE TABLE IF NOT EXISTS ProductSpecifications (
+    SpecificationID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    SpecificationName VARCHAR(100) NOT NULL,
+    SpecificationValue TEXT NOT NULL,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
 
-        char temp = letters[secondIndex];
-        letters[secondIndex] = letters[secondLastIndex];
-        letters[secondLastIndex] = temp;
-    }
+-- Таблица клиентов
+CREATE TABLE IF NOT EXISTS Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Phone VARCHAR(20),
+    Address TEXT,
+    RegistrationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    LastLogin DATETIME
+);
 
-    public int FindLastYIndex()
-    {
-        for (int i = letters.Length - 1; i >= 0; i--)
-        {
-            if (letters[i] == 'Y')
-                return i;
-        }
-        return -1; // Возвращает -1, если 'Y' не найден
-    }
+-- Таблица заказов
+CREATE TABLE IF NOT EXISTS Orders (
+    OrderID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    OrderDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    TotalAmount DECIMAL(10, 2) NOT NULL,
+    Status ENUM('Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled') DEFAULT 'Pending',
+    PaymentStatus ENUM('Pending', 'Paid', 'Refunded') DEFAULT 'Pending',
+    ShippingAddress TEXT,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
 
-    public int CountConsonants()
-    {
-        int count = 0;
-        foreach (char letter in letters)
-        {
-            // Проверяем, является ли буква согласной
-            if (IsConsonant(letter))
-            {
-                count++;
-            }
-        }
-        return count;
-    }
+-- Таблица деталей заказа
+CREATE TABLE IF NOT EXISTS OrderDetails (
+    OrderDetailID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    ProductID INT,
+    Quantity INT NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    Discount DECIMAL(5, 2) DEFAULT 0,
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
 
-    private bool IsConsonant(char letter)
-    {
-        // Список согласных букв
-        string consonants = "BCDFGHJKLMNPQRSTVWXYZ";
-        return consonants.Contains(letter);
-    }
+-- Таблица сотрудников
+CREATE TABLE IF NOT EXISTS Employees (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Role ENUM('Admin', 'Manager', 'Support', 'Warehouse') DEFAULT 'Support',
+    HireDate DATE,
+    IsActive BOOLEAN DEFAULT TRUE
+);
 
-    public void PrintArray()
-    {
-        Console.WriteLine("Массив: " + string.Join(" ", letters));
-    }
-}
+-- Таблица доставки
+CREATE TABLE IF NOT EXISTS Shipping (
+    ShippingID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    ShippingDate DATETIME,
+    TrackingNumber VARCHAR(100),
+    Carrier VARCHAR(100),
+    Status ENUM('Pending', 'In Transit', 'Delivered') DEFAULT 'Pending',
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
 
-class Program
-{
-    static void Main(string[] args)
-    {
-        Console.Write("Введите размер массива: ");
-        int size = int.Parse(Console.ReadLine());
+-- Таблица отзывов
+CREATE TABLE IF NOT EXISTS Reviews (
+    ReviewID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    CustomerID INT,
+    Rating INT CHECK (Rating BETWEEN 1 AND 5),
+    Comment TEXT,
+    ReviewDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    IsApproved BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
 
-        LatinLettersArray array = new LatinLettersArray(size);
-        Console.WriteLine("Исходный массив:");
-        array.PrintArray();
+-- Таблица скидок и промо-акций
+CREATE TABLE IF NOT EXISTS Promotions (
+    PromotionID INT AUTO_INCREMENT PRIMARY KEY,
+    PromotionName VARCHAR(100) NOT NULL,
+    Description TEXT,
+    DiscountPercent DECIMAL(5, 2) NOT NULL,
+    StartDate DATE,
+    EndDate DATE,
+    IsActive BOOLEAN DEFAULT TRUE
+);
 
-        array.SwapSecondAndSecondLast();
-        Console.WriteLine("Массив после обмена второго и предпоследнего элементов:");
-        array.PrintArray();
+-- Таблица применения промо-акций к товарам
+CREATE TABLE IF NOT EXISTS ProductPromotions (
+    ProductPromotionID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    PromotionID INT,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+    FOREIGN KEY (PromotionID) REFERENCES Promotions(PromotionID)
+);
 
-        int lastYIndex = array.FindLastYIndex();
-        if (lastYIndex != -1)
-        {
-            Console.WriteLine($"Индекс последнего 'Y': {lastYIndex}");
-        }
-        else
-        {
-            Console.WriteLine("Символ 'Y' не найден в массиве.");
-        }
+-- Таблица платежей
+CREATE TABLE IF NOT EXISTS Payments (
+    PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    PaymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Amount DECIMAL(10, 2) NOT NULL,
+    PaymentMethod ENUM('Credit Card', 'PayPal', 'Bank Transfer', 'Cryptocurrency') DEFAULT 'Credit Card',
+    TransactionID VARCHAR(100),
+    Status ENUM('Pending', 'Completed', 'Failed') DEFAULT 'Pending',
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
 
-        Console.WriteLine($"Количество согласных букв: {array.CountConsonants()}");
-    }
-}
+-- Таблица возвратов
+CREATE TABLE IF NOT EXISTS Returns (
+    ReturnID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    ProductID INT,
+    ReturnDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Reason TEXT,
+    Status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+    RefundAmount DECIMAL(10, 2),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Таблица гарантийных случаев
+CREATE TABLE IF NOT EXISTS WarrantyClaims (
+    WarrantyClaimID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    ProductID INT,
+    ClaimDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Description TEXT,
+    Status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+    Resolution TEXT,
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Таблица склада
+CREATE TABLE IF NOT EXISTS Warehouse (
+    WarehouseID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    Quantity INT NOT NULL,
+    Location VARCHAR(255),
+    LastStockUpdate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Таблица поставщиков
+CREATE TABLE IF NOT EXISTS Suppliers (
+    SupplierID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierName VARCHAR(100) NOT NULL,
+    ContactInfo TEXT,
+    Website VARCHAR(255)
+);
+
+-- Таблица закупок
+CREATE TABLE IF NOT EXISTS Purchases (
+    PurchaseID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierID INT,
+    ProductID INT,
+    PurchaseDate DATE,
+    Quantity INT NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Таблица аналитики продаж
+CREATE TABLE IF NOT EXISTS SalesAnalytics (
+    AnalyticsID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductID INT,
+    SalesDate DATE,
+    QuantitySold INT,
+    TotalRevenue DECIMAL(10, 2),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Триггер для обновления количества товаров на складе после заказа
+DELIMITER //
+CREATE TRIGGER UpdateStockAfterOrder
+AFTER INSERT ON OrderDetails
+FOR EACH ROW
+BEGIN
+    UPDATE Warehouse
+    SET Quantity = Quantity - NEW.Quantity,
+        LastStockUpdate = NOW()
+    WHERE ProductID = NEW.ProductID;
+END;
+//
+DELIMITER ;
+
+-- Триггер для проверки наличия товара на складе перед заказом
+DELIMITER //
+CREATE TRIGGER CheckStockBeforeOrder
+BEFORE INSERT ON OrderDetails
+FOR EACH ROW
+BEGIN
+    DECLARE stock INT;
+    SELECT Quantity INTO stock FROM Warehouse WHERE ProductID = NEW.ProductID;
+    IF stock < NEW.Quantity THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Недостаточно товара на складе';
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- Триггер для автоматического обновления статуса заказа после оплаты
+DELIMITER //
+CREATE TRIGGER UpdateOrderStatusAfterPayment
+AFTER UPDATE ON Payments
+FOR EACH ROW
+BEGIN
+    IF NEW.Status = 'Completed' THEN
+        UPDATE Orders
+        SET Status = 'Processing'
+        WHERE OrderID = NEW.OrderID;
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- Триггер для обновления аналитики продаж после завершения заказа
+DELIMITER //
+CREATE TRIGGER UpdateSalesAnalytics
+AFTER UPDATE ON Orders
+FOR EACH ROW
+BEGIN
+    IF NEW.Status = 'Delivered' THEN
+        INSERT INTO SalesAnalytics (ProductID, SalesDate, QuantitySold, TotalRevenue)
+        SELECT ProductID, NOW(), Quantity, Price * Quantity
+        FROM OrderDetails
+        WHERE OrderID = NEW.OrderID;
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- Индексы для ускорения поиска
+CREATE INDEX idx_product_name ON Products(ProductName);
+CREATE INDEX idx_customer_email ON Customers(Email);
+CREATE INDEX idx_order_date ON Orders(OrderDate);
+CREATE INDEX idx_shipping_status ON Shipping(Status);
+CREATE INDEX idx_promotion_active ON Promotions(IsActive);
+CREATE INDEX idx_product_active ON Products(IsActive);
