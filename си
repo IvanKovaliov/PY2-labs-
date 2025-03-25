@@ -4,32 +4,31 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("Программа для вычисления выражений варианта 10");
-        Console.WriteLine("z1 = sin(π/2 + 3α) / (1 - sin(3α - π))");
-        Console.WriteLine("z2 = ctg(5π/4 + 3α/2)");
+        int a, b, c;
         
-        // Ввод значения угла α в градусах
-        Console.Write("Введите значение угла α в градусах: ");
-        double alphaDegrees = Convert.ToDouble(Console.ReadLine());
+        Console.WriteLine("Введите число A:");
+        a = Convert.ToInt32(Console.ReadLine());
         
-        // Преобразование градусов в радианы
-        double alphaRadians = alphaDegrees * Math.PI / 180;
+        Console.WriteLine("Введите число B:");
+        b = Convert.ToInt32(Console.ReadLine());
         
-        // Вычисление z1
-        double numerator = Math.Sin(Math.PI/2 + 3*alphaRadians);
-        double denominator = 1 - Math.Sin(3*alphaRadians - Math.PI);
-        double z1 = numerator / denominator;
+        Console.WriteLine("Введите число C:");
+        c = Convert.ToInt32(Console.ReadLine());
         
-        // Вычисление z2
-        double argument = 5*Math.PI/4 + 3*alphaRadians/2;
-        double z2 = 1 / Math.Tan(argument); // ctg(x) = 1/tan(x)
+        int min = a;
         
-        // Вывод результатов
-        Console.WriteLine($"Результаты для α = {alphaDegrees}°:");
-        Console.WriteLine($"z1 = {z1:F4}");
-        Console.WriteLine($"z2 = {z2:F4}");
+        if (b < min)
+        {
+            min = b;
+        }
         
-        // Пауза перед закрытием консоли
+        if (c < min)
+        {
+            min = c;
+        }
+        
+        Console.WriteLine("Наименьшее число: " + min);
+        Console.Write("Для продолжения нажмите Enter...");
         Console.ReadLine();
     }
 }
