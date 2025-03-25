@@ -4,31 +4,48 @@ class Program
 {
     static void Main()
     {
-        int a, b, c;
+        Console.WriteLine("Программа подсчета положительных, отрицательных чисел и нулей");
+        Console.WriteLine("-------------------------------------------------------------");
         
-        Console.WriteLine("Введите число A:");
-        a = Convert.ToInt32(Console.ReadLine());
-        
-        Console.WriteLine("Введите число B:");
-        b = Convert.ToInt32(Console.ReadLine());
-        
-        Console.WriteLine("Введите число C:");
-        c = Convert.ToInt32(Console.ReadLine());
-        
-        int min = a;
-        
-        if (b < min)
+        // Ввод количества чисел
+        int n;
+        Console.Write("Введите количество чисел (n): ");
+        while (!int.TryParse(Console.ReadLine(), out n) || n <= 0)
         {
-            min = b;
+            Console.WriteLine("Ошибка ввода! Пожалуйста, введите целое положительное число.");
+            Console.Write("Введите количество чисел (n): ");
         }
         
-        if (c < min)
+        int positiveCount = 0;
+        int negativeCount = 0;
+        int zeroCount = 0;
+        
+        // Ввод чисел и подсчет
+        for (int i = 0; i < n; i++)
         {
-            min = c;
+            Console.Write("Введите число #{0}: ", i + 1);
+            int number;
+            while (!int.TryParse(Console.ReadLine(), out number))
+            {
+                Console.WriteLine("Ошибка ввода! Пожалуйста, введите целое число.");
+                Console.Write("Введите число #{0}: ", i + 1);
+            }
+            
+            if (number > 0)
+                positiveCount++;
+            else if (number < 0)
+                negativeCount++;
+            else
+                zeroCount++;
         }
         
-        Console.WriteLine("Наименьшее число: " + min);
-        Console.Write("Для продолжения нажмите Enter...");
+        // Вывод результатов
+        Console.WriteLine("\nРезультаты:");
+        Console.WriteLine("Положительных чисел: {0}", positiveCount);
+        Console.WriteLine("Отрицательных чисел: {0}", negativeCount);
+        Console.WriteLine("Нулей: {0}", zeroCount);
+        
+        Console.Write("\nДля завершения нажмите Enter...");
         Console.ReadLine();
     }
 }
