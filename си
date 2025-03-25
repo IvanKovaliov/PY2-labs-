@@ -1,170 +1,53 @@
 using System;
+using System.Text;
 
-// Базовый абстрактный класс File
-abstract class File
+class TextProcessor
 {
-    protected string Name;
-    protected double Size; // размер в мегабайтах
-    protected string Format;
-
-    protected File(string name, double size, string format)
+    // Метод для удаления повторяющихся подряд слов в предложениях
+    public static string RemoveConsecutiveDuplicates(string text)
     {
-        this.Name = name;
-        this.Size = size;
-        this.Format = format;
-    }
-
-    public abstract void Open();
-    public abstract void Edit();
-    public abstract override string ToString(); // Явно указано override
-}
-
-// Производный класс ImageFile (Рисунок)
-class ImageFile : File
-{
-    private int Width;
-    private int Height;
-    private string ColorMode;
-
-    public ImageFile(string name, double size, string format, int width, int height, string colorMode)
-        : base(name, size, format)
-    {
-        this.Width = width;
-        this.Height = height;
-        this.ColorMode = colorMode;
-    }
-
-    public override void Open()
-    {
-        Console.WriteLine("Открыт рисунок " + Name + " в формате " + Format);
-    }
-
-    public override void Edit()
-    {
-        Console.WriteLine("Редактирование рисунка " + Name + " (" + Width + "x" + Height + " px)");
-    }
-
-    public override string ToString()
-    {
-        return "Рисунок: " + Name + ", размер: " + Size + " MB, формат: " + Format + 
-               ", разрешение: " + Width + "x" + Height + ", цветовой режим: " + ColorMode;
-    }
-
-    // Дополнительный метод для изменения размера
-    public void Resize(int newWidth, int newHeight)
-    {
-        Width = newWidth;
-        Height = newHeight;
-        Console.WriteLine("Размер изображения изменен на " + newWidth + "x" + newHeight);
-    }
-}
-
-// Производный класс AudioFile (Аудио)
-class AudioFile : File
-{
-    private int Duration; // в секундах
-    private string Artist;
-
-    public AudioFile(string name, double size, string format, int duration, string artist)
-        : base(name, size, format)
-    {
-        this.Duration = duration;
-        this.Artist = artist;
-    }
-
-    public override void Open()
-    {
-        Console.WriteLine("Воспроизведение аудиофайла " + Name + " (" + Duration + " сек)");
-    }
-
-    public override void Edit()
-    {
-        Console.WriteLine("Редактирование аудиофайла " + Name + " исполнителя " + Artist);
-    }
-
-    public override string ToString()
-    {
-        return "Аудио: " + Name + ", размер: " + Size + " MB, формат: " + Format + 
-               ", длительность: " + Duration + " сек, исполнитель: " + Artist;
-    }
-
-    // Дополнительный метод для обрезки аудио
-    public void Trim(int newDuration)
-    {
-        if (newDuration < Duration)
+        // Разделяем текст на предложения (по точкам и восклицательным знакам)
+        string[] sentences = text.Split(new[] { '.', '!' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        StringBuilder result = new StringBuilder();
+        
+        foreach (string sentence in sentences)
         {
-            Duration = newDuration;
-            Console.WriteLine("Аудио обрезано до " + newDuration + " секунд");
+            if (string.IsNullOrWhiteSpace(sentence)) continue;
+            
+            // Разделяем предложение на слова
+            string[] words = sentence.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            if (words.Length == 0) continue;
+            
+            // Обрабатываем слова, удаляя подряд идущие дубликаты
+            StringBuilder cleanedSentence = new StringBuilder();
+            string previousWord = words[0];
+            cleanedSentence.Append(previousWord);
+            
+            for (int i = 1; i < words.Length; i++)
+            {
+                if (!words[i].Equals(previousWord, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    cleanedSentence.Append(" " + words[i]);
+                    previousWord = words[i];
+                }
+            }
+            
+            // Добавляем обработанное предложение в результат
+            result.Append(cleanedSentence.ToString());
+            
+            // Восстанавливаем знак препинания (берем следующий после предложения)
+            int sentenceEnd = text.IndexOf(sentence) + sentence.Length;
+            if (sentenceEnd < text.Length)
+            {
+                result.Append(text[sentenceEnd]);
+            }
+            
+            result.Append(" ");
         }
-    }
-}
-
-// Производный класс VideoFile (Видео)
-class VideoFile : File
-{
-    private int Duration; // в секундах
-    private string Resolution;
-    private int Fps;
-
-    public VideoFile(string name, double size, string format, int duration, string resolution, int fps)
-        : base(name, size, format)
-    {
-        this.Duration = duration;
-        this.Resolution = resolution;
-        this.Fps = fps;
-    }
-
-    public override void Open()
-    {
-        Console.WriteLine("Воспроизведение видеофайла " + Name + " (" + Resolution + ", " + Fps + " fps)");
-    }
-
-    public override void Edit()
-    {
-        Console.WriteLine("Редактирование видеофайла " + Name + " (" + Duration + " сек)");
-    }
-
-    public override string ToString()
-    {
-        return "Видео: " + Name + ", размер: " + Size + " MB, формат: " + Format + 
-               ", длительность: " + Duration + " сек, разрешение: " + Resolution + 
-               ", кадров в секунду: " + Fps;
-    }
-
-    // Перегрузка оператора сравнения ==
-    public static bool operator ==(VideoFile v1, VideoFile v2)
-    {
-        // Проверка на null
-        if (object.ReferenceEquals(v1, null))
-        {
-            return object.ReferenceEquals(v2, null);
-        }
-        if (object.ReferenceEquals(v2, null))
-        {
-            return false;
-        }
-        return (v1.Name == v2.Name && v1.Resolution == v2.Resolution);
-    }
-
-    public static bool operator !=(VideoFile v1, VideoFile v2)
-    {
-        return !(v1 == v2);
-    }
-
-    // Переопределение Equals и GetHashCode для соответствия рекомендациям
-    public override bool Equals(object obj)
-    {
-        if (obj == null || GetType() != obj.GetType())
-        {
-            return false;
-        }
-        VideoFile v = (VideoFile)obj;
-        return (Name == v.Name && Resolution == v.Resolution);
-    }
-
-    public override int GetHashCode()
-    {
-        return Name.GetHashCode() ^ Resolution.GetHashCode();
+        
+        return result.ToString().Trim();
     }
 }
 
@@ -172,33 +55,14 @@ class Program
 {
     static void Main()
     {
-        File[] files = new File[5];
-        files[0] = new ImageFile("Nature", 2.5, "JPEG", 1920, 1080, "RGB");
-        files[1] = new AudioFile("Song", 5.8, "MP3", 240, "Artist1");
-        files[2] = new VideoFile("Movie", 1500, "MP4", 5400, "1920x1080", 24);
-        files[3] = new ImageFile("Portrait", 3.2, "PNG", 1200, 1600, "CMYK");
-        files[4] = new VideoFile("Clip", 250, "AVI", 180, "1280x720", 30);
-
-        foreach (File item in files)
-        {
-            Console.WriteLine(item.ToString());
-            item.Open();
-            item.Edit();
-            Console.WriteLine();
-        }
-
-        // Демонстрация дополнительных методов
-        ((ImageFile)files[0]).Resize(800, 600);
-        ((AudioFile)files[1]).Trim(180);
+        Console.WriteLine("Введите текст на русском языке:");
+        string inputText = Console.ReadLine();
         
-        // Демонстрация перегруженного оператора
-        VideoFile video1 = (VideoFile)files[2];
-        VideoFile video2 = (VideoFile)files[4];
-        if (video1 == video2)
-            Console.WriteLine("Видеофайлы одинаковые");
-        else
-            Console.WriteLine("Видеофайлы разные");
-
+        string processedText = TextProcessor.RemoveConsecutiveDuplicates(inputText);
+        
+        Console.WriteLine("\nРезультат обработки:");
+        Console.WriteLine(processedText);
+        
         Console.ReadLine();
     }
 }
