@@ -1,51 +1,175 @@
 using System;
 
+// Базовый абстрактный класс File
+abstract class File
+{
+    protected string Name;
+    protected double Size; // размер в мегабайтах
+    protected string Format;
+
+    protected File(string name, double size, string format)
+    {
+        this.Name = name;
+        this.Size = size;
+        this.Format = format;
+    }
+
+    public abstract void Open();
+    public abstract void Edit();
+    public override abstract string ToString();
+}
+
+// Производный класс ImageFile (Рисунок)
+class ImageFile : File
+{
+    private int Width;
+    private int Height;
+    private string ColorMode;
+
+    public ImageFile(string name, double size, string format, int width, int height, string colorMode)
+        : base(name, size, format)
+    {
+        this.Width = width;
+        this.Height = height;
+        this.ColorMode = colorMode;
+    }
+
+    public override void Open()
+    {
+        Console.WriteLine($"Открыт рисунок {Name} в формате {Format}");
+    }
+
+    public override void Edit()
+    {
+        Console.WriteLine($"Редактирование рисунка {Name} ({Width}x{Height} px)");
+    }
+
+    public override string ToString()
+    {
+        return $"Рисунок: {Name}, размер: {Size} MB, формат: {Format}, разрешение: {Width}x{Height}, цветовой режим: {ColorMode}";
+    }
+
+    // Дополнительный метод для изменения размера
+    public void Resize(int newWidth, int newHeight)
+    {
+        Width = newWidth;
+        Height = newHeight;
+        Console.WriteLine($"Размер изображения изменен на {newWidth}x{newHeight}");
+    }
+}
+
+// Производный класс AudioFile (Аудио)
+class AudioFile : File
+{
+    private int Duration; // в секундах
+    private string Artist;
+
+    public AudioFile(string name, double size, string format, int duration, string artist)
+        : base(name, size, format)
+    {
+        this.Duration = duration;
+        this.Artist = artist;
+    }
+
+    public override void Open()
+    {
+        Console.WriteLine($"Воспроизведение аудиофайла {Name} ({Duration} сек)");
+    }
+
+    public override void Edit()
+    {
+        Console.WriteLine($"Редактирование аудиофайла {Name} исполнителя {Artist}");
+    }
+
+    public override string ToString()
+    {
+        return $"Аудио: {Name}, размер: {Size} MB, формат: {Format}, длительность: {Duration} сек, исполнитель: {Artist}";
+    }
+
+    // Дополнительный метод для обрезки аудио
+    public void Trim(int newDuration)
+    {
+        if (newDuration < Duration)
+        {
+            Duration = newDuration;
+            Console.WriteLine($"Аудио обрезано до {newDuration} секунд");
+        }
+    }
+}
+
+// Производный класс VideoFile (Видео)
+class VideoFile : File
+{
+    private int Duration; // в секундах
+    private string Resolution;
+    private int Fps;
+
+    public VideoFile(string name, double size, string format, int duration, string resolution, int fps)
+        : base(name, size, format)
+    {
+        this.Duration = duration;
+        this.Resolution = resolution;
+        this.Fps = fps;
+    }
+
+    public override void Open()
+    {
+        Console.WriteLine($"Воспроизведение видеофайла {Name} ({Resolution}, {Fps} fps)");
+    }
+
+    public override void Edit()
+    {
+        Console.WriteLine($"Редактирование видеофайла {Name} ({Duration} сек)");
+    }
+
+    public override string ToString()
+    {
+        return $"Видео: {Name}, размер: {Size} MB, формат: {Format}, длительность: {Duration} сек, разрешение: {Resolution}, кадров в секунду: {Fps}";
+    }
+
+    // Перегрузка оператора сравнения ==
+    public static bool operator ==(VideoFile v1, VideoFile v2)
+    {
+        if (v1.Name == v2.Name && v1.Resolution == v2.Resolution) return true;
+        else return false;
+    }
+
+    public static bool operator !=(VideoFile v1, VideoFile v2)
+    {
+        if (v1.Name == v2.Name && v1.Resolution == v2.Resolution) return false;
+        else return true;
+    }
+}
+
 class Program
 {
     static void Main()
     {
-        Console.WriteLine("Программа подсчета положительных, отрицательных чисел и нулей");
-        Console.WriteLine("-------------------------------------------------------------");
-        
-        // Ввод количества чисел
-        int n;
-        Console.Write("Введите количество чисел (n): ");
-        while (!int.TryParse(Console.ReadLine(), out n) || n <= 0)
+        File[] files = new File[5];
+        files[0] = new ImageFile("Nature", 2.5, "JPEG", 1920, 1080, "RGB");
+        files[1] = new AudioFile("Song", 5.8, "MP3", 240, "Artist1");
+        files[2] = new VideoFile("Movie", 1500, "MP4", 5400, "1920x1080", 24);
+        files[3] = new ImageFile("Portrait", 3.2, "PNG", 1200, 1600, "CMYK");
+        files[4] = new VideoFile("Clip", 250, "AVI", 180, "1280x720", 30);
+
+        foreach (File item in files)
         {
-            Console.WriteLine("Ошибка ввода! Пожалуйста, введите целое положительное число.");
-            Console.Write("Введите количество чисел (n): ");
+            Console.WriteLine(item.ToString());
+            item.Open();
+            item.Edit();
+            Console.WriteLine();
         }
+
+        // Демонстрация дополнительных методов
+        ((ImageFile)files[0]).Resize(800, 600);
+        ((AudioFile)files[1]).Trim(180);
         
-        int positiveCount = 0;
-        int negativeCount = 0;
-        int zeroCount = 0;
-        
-        // Ввод чисел и подсчет
-        for (int i = 0; i < n; i++)
-        {
-            Console.Write("Введите число #{0}: ", i + 1);
-            int number;
-            while (!int.TryParse(Console.ReadLine(), out number))
-            {
-                Console.WriteLine("Ошибка ввода! Пожалуйста, введите целое число.");
-                Console.Write("Введите число #{0}: ", i + 1);
-            }
-            
-            if (number > 0)
-                positiveCount++;
-            else if (number < 0)
-                negativeCount++;
-            else
-                zeroCount++;
-        }
-        
-        // Вывод результатов
-        Console.WriteLine("\nРезультаты:");
-        Console.WriteLine("Положительных чисел: {0}", positiveCount);
-        Console.WriteLine("Отрицательных чисел: {0}", negativeCount);
-        Console.WriteLine("Нулей: {0}", zeroCount);
-        
-        Console.Write("\nДля завершения нажмите Enter...");
+        // Демонстрация перегруженного оператора
+        if (((VideoFile)files[2]) == ((VideoFile)files[4]))
+            Console.WriteLine("Видеофайлы одинаковые");
+        else
+            Console.WriteLine("Видеофайлы разные");
+
         Console.ReadLine();
     }
 }
