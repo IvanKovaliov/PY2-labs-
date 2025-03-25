@@ -16,7 +16,7 @@ abstract class File
 
     public abstract void Open();
     public abstract void Edit();
-    public override abstract string ToString();
+    public abstract override string ToString(); // Явно указано override
 }
 
 // Производный класс ImageFile (Рисунок)
@@ -36,17 +36,18 @@ class ImageFile : File
 
     public override void Open()
     {
-        Console.WriteLine($"Открыт рисунок {Name} в формате {Format}");
+        Console.WriteLine("Открыт рисунок " + Name + " в формате " + Format);
     }
 
     public override void Edit()
     {
-        Console.WriteLine($"Редактирование рисунка {Name} ({Width}x{Height} px)");
+        Console.WriteLine("Редактирование рисунка " + Name + " (" + Width + "x" + Height + " px)");
     }
 
     public override string ToString()
     {
-        return $"Рисунок: {Name}, размер: {Size} MB, формат: {Format}, разрешение: {Width}x{Height}, цветовой режим: {ColorMode}";
+        return "Рисунок: " + Name + ", размер: " + Size + " MB, формат: " + Format + 
+               ", разрешение: " + Width + "x" + Height + ", цветовой режим: " + ColorMode;
     }
 
     // Дополнительный метод для изменения размера
@@ -54,7 +55,7 @@ class ImageFile : File
     {
         Width = newWidth;
         Height = newHeight;
-        Console.WriteLine($"Размер изображения изменен на {newWidth}x{newHeight}");
+        Console.WriteLine("Размер изображения изменен на " + newWidth + "x" + newHeight);
     }
 }
 
@@ -73,17 +74,18 @@ class AudioFile : File
 
     public override void Open()
     {
-        Console.WriteLine($"Воспроизведение аудиофайла {Name} ({Duration} сек)");
+        Console.WriteLine("Воспроизведение аудиофайла " + Name + " (" + Duration + " сек)");
     }
 
     public override void Edit()
     {
-        Console.WriteLine($"Редактирование аудиофайла {Name} исполнителя {Artist}");
+        Console.WriteLine("Редактирование аудиофайла " + Name + " исполнителя " + Artist);
     }
 
     public override string ToString()
     {
-        return $"Аудио: {Name}, размер: {Size} MB, формат: {Format}, длительность: {Duration} сек, исполнитель: {Artist}";
+        return "Аудио: " + Name + ", размер: " + Size + " MB, формат: " + Format + 
+               ", длительность: " + Duration + " сек, исполнитель: " + Artist;
     }
 
     // Дополнительный метод для обрезки аудио
@@ -92,7 +94,7 @@ class AudioFile : File
         if (newDuration < Duration)
         {
             Duration = newDuration;
-            Console.WriteLine($"Аудио обрезано до {newDuration} секунд");
+            Console.WriteLine("Аудио обрезано до " + newDuration + " секунд");
         }
     }
 }
@@ -114,30 +116,55 @@ class VideoFile : File
 
     public override void Open()
     {
-        Console.WriteLine($"Воспроизведение видеофайла {Name} ({Resolution}, {Fps} fps)");
+        Console.WriteLine("Воспроизведение видеофайла " + Name + " (" + Resolution + ", " + Fps + " fps)");
     }
 
     public override void Edit()
     {
-        Console.WriteLine($"Редактирование видеофайла {Name} ({Duration} сек)");
+        Console.WriteLine("Редактирование видеофайла " + Name + " (" + Duration + " сек)");
     }
 
     public override string ToString()
     {
-        return $"Видео: {Name}, размер: {Size} MB, формат: {Format}, длительность: {Duration} сек, разрешение: {Resolution}, кадров в секунду: {Fps}";
+        return "Видео: " + Name + ", размер: " + Size + " MB, формат: " + Format + 
+               ", длительность: " + Duration + " сек, разрешение: " + Resolution + 
+               ", кадров в секунду: " + Fps;
     }
 
     // Перегрузка оператора сравнения ==
     public static bool operator ==(VideoFile v1, VideoFile v2)
     {
-        if (v1.Name == v2.Name && v1.Resolution == v2.Resolution) return true;
-        else return false;
+        // Проверка на null
+        if (object.ReferenceEquals(v1, null))
+        {
+            return object.ReferenceEquals(v2, null);
+        }
+        if (object.ReferenceEquals(v2, null))
+        {
+            return false;
+        }
+        return (v1.Name == v2.Name && v1.Resolution == v2.Resolution);
     }
 
     public static bool operator !=(VideoFile v1, VideoFile v2)
     {
-        if (v1.Name == v2.Name && v1.Resolution == v2.Resolution) return false;
-        else return true;
+        return !(v1 == v2);
+    }
+
+    // Переопределение Equals и GetHashCode для соответствия рекомендациям
+    public override bool Equals(object obj)
+    {
+        if (obj == null || GetType() != obj.GetType())
+        {
+            return false;
+        }
+        VideoFile v = (VideoFile)obj;
+        return (Name == v.Name && Resolution == v.Resolution);
+    }
+
+    public override int GetHashCode()
+    {
+        return Name.GetHashCode() ^ Resolution.GetHashCode();
     }
 }
 
@@ -165,7 +192,9 @@ class Program
         ((AudioFile)files[1]).Trim(180);
         
         // Демонстрация перегруженного оператора
-        if (((VideoFile)files[2]) == ((VideoFile)files[4]))
+        VideoFile video1 = (VideoFile)files[2];
+        VideoFile video2 = (VideoFile)files[4];
+        if (video1 == video2)
             Console.WriteLine("Видеофайлы одинаковые");
         else
             Console.WriteLine("Видеофайлы разные");
