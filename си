@@ -1,68 +1,420 @@
-using System;
-using System.Text;
+#include "stdafx.h"
+#include "Lab_SP_04.h"
+#include <windowsx.h>
 
-class TextProcessor
+#define MAX_LOADSTRING 100
+
+// Глобальные переменные:
+HINSTANCE hInst;                                // текущий экземпляр
+TCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
+TCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
+int iColor[3] = { 128, 128, 128 };             // Темно-серый цвет фона (вариант 10)
+HWND hGbox;                                     // Дескриптор группы переключателей
+HWND hCombo;                                    // Дескриптор комбинированного списка
+
+// Прототипы функций
+ATOM                MyRegisterClass(HINSTANCE hInstance);
+BOOL                InitInstance(HINSTANCE, int);
+LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK    GroupBoxProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK       EnumWindowsProc(HWND hwnd, LPARAM lParam);
+
+WNDPROC OldGroupBoxProc;  // Указатель на предыдущую оконную процедуру группы
+
+int APIENTRY _tWinMain(HINSTANCE hInstance,
+                     HINSTANCE hPrevInstance,
+                     LPTSTR    lpCmdLine,
+                     int       nCmdShow)
 {
-    // Метод для удаления повторяющихся подряд слов в предложениях
-    public static string RemoveConsecutiveDuplicates(string text)
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    UNREFERENCED_PARAMETER(lpCmdLine);
+
+    // Инициализация глобальных строк
+    LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+    LoadString(hInstance, IDC_LAB_SP_04, szWindowClass, MAX_LOADSTRING);
+    MyRegisterClass(hInstance);
+
+    // Выполнить инициализацию приложения:
+    if (!InitInstance (hInstance, nCmdShow))
     {
-        // Разделяем текст на предложения (по точкам и восклицательным знакам)
-        string[] sentences = text.Split(new[] { '.', '!' }, StringSplitOptions.RemoveEmptyEntries);
-        
-        StringBuilder result = new StringBuilder();
-        
-        foreach (string sentence in sentences)
-        {
-            if (string.IsNullOrWhiteSpace(sentence)) continue;
-            
-            // Разделяем предложение на слова
-            string[] words = sentence.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            
-            if (words.Length == 0) continue;
-            
-            // Обрабатываем слова, удаляя подряд идущие дубликаты
-            StringBuilder cleanedSentence = new StringBuilder();
-            string previousWord = words[0];
-            cleanedSentence.Append(previousWord);
-            
-            for (int i = 1; i < words.Length; i++)
-            {
-                if (!words[i].Equals(previousWord, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    cleanedSentence.Append(" " + words[i]);
-                    previousWord = words[i];
-                }
-            }
-            
-            // Добавляем обработанное предложение в результат
-            result.Append(cleanedSentence.ToString());
-            
-            // Восстанавливаем знак препинания (берем следующий после предложения)
-            int sentenceEnd = text.IndexOf(sentence) + sentence.Length;
-            if (sentenceEnd < text.Length)
-            {
-                result.Append(text[sentenceEnd]);
-            }
-            
-            result.Append(" ");
-        }
-        
-        return result.ToString().Trim();
+        return FALSE;
     }
+
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_LAB_SP_04));
+
+    MSG msg;
+
+    // Цикл основного сообщения:
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+
+    return (int) msg.wParam;
 }
 
-class Program
+// Функция регистрации класса окна
+ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-    static void Main()
+    WNDCLASSEX wcex;
+
+    wcex.cbSize = sizeof(WNDCLASSEX);
+
+    wcex.style          = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc    = WndProc;
+    wcex.cbClsExtra     = 0;
+    wcex.cbWndExtra     = 0;
+    wcex.hInstance      = hInstance;
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LAB_SP_04));
+    wcex.hCursor        = LoadCursor(NULL, IDC_CROSS);  // Курсор для варианта 10
+    wcex.hbrBackground  = (HBRUSH)CreateSolidBrush(RGB(iColor[0], iColor[1], iColor[2]));
+    wcex.lpszMenuName   = MAKEINTRESOURCE(IDC_LAB_SP_04);
+    wcex.lpszClassName  = szWindowClass;
+    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+
+    return RegisterClassEx(&wcex);
+}
+
+// Функция инициализации экземпляра приложения
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+{
+   HWND hWnd;
+
+   hInst = hInstance; // Сохранить дескриптор экземпляра в глобальной переменной
+
+   // Создание окна с размерами 350x350 (вариант 10)
+   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+      CW_USEDEFAULT, 0, 350, 350, NULL, NULL, hInstance, NULL);
+
+   if (!hWnd)
+   {
+      return FALSE;
+   }
+
+   ShowWindow(hWnd, nCmdShow);
+   UpdateWindow(hWnd);
+
+   return TRUE;
+}
+
+// Оконная процедура группы переключателей
+LRESULT CALLBACK GroupBoxProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    // Обработчик от сообщений кнопок переключателей группы
+    switch (uMsg)
     {
-        Console.WriteLine("Введите текст на русском языке:");
-        string inputText = Console.ReadLine();
-        
-        string processedText = TextProcessor.RemoveConsecutiveDuplicates(inputText);
-        
-        Console.WriteLine("\nРезультат обработки:");
-        Console.WriteLine(processedText);
-        
-        Console.ReadLine();
+        case WM_COMMAND:
+            // Передача сообщений родительскому окну
+            CallWindowProc(WndProc, GetParent(hWnd), uMsg, wParam, lParam);
+            break;
     }
+    return CallWindowProc(OldGroupBoxProc, hWnd, uMsg, wParam, lParam);
+}
+
+// Функция передачи заголовков открытых видимых окон в COMBOBOX
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+    TCHAR str[255]; // локальная строка с заголовком окна
+    if (GetWindowText(hwnd, str, 255)) // если строка заголовка извлечена
+    {
+        if (IsWindowVisible(hwnd) && (!GetWindow(hwnd, GW_OWNER))) // условия видимости
+            SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)str); // Отправка строки в COMBOBOX
+    }
+    return TRUE; // Возврат кода завершения
+}
+
+// Основная оконная процедура
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    int wmId, wmEvent;
+    PAINTSTRUCT ps;
+    HDC hdc;
+    static HWND hTxt;           // Дескриптор статического текста
+    static WORD posX, posY;     // Координаты окна
+    TCHAR buf[80];              // Буфер для строк
+    static HFONT hFont;         // Дескриптор шрифта
+    static HWND hBtn;           // Дескриптор кнопки
+    static int flagChk = 0;     // Флаг маркера
+    static HWND hBtnChkR;       // Дескриптор кнопки красного цвета
+    static HWND hBtnChkG;       // Дескриптор кнопки зеленого цвета
+    static HWND hBtnChkB;       // Дескриптор кнопки синего цвета
+    static HWND hSbar;          // Дескриптор полосы прокрутки
+    static int CodeColor = 0;   // Код выбранного цвета
+    static HWND hTcolor;        // Дескриптор текста цвета
+    HBRUSH ColorBrush;          // Кисть для цвета фона
+    static HWND hList;          // Дескриптор списка
+    static int ListItem = NULL; // Номер выбранной строки из списка
+
+    switch (message)
+    {
+    case WM_CREATE:
+        // Создание статического текста для отображения положения окна
+        hTxt = CreateWindowEx(NULL, L"STATIC", L"Положение окна : 0 x 0",
+            WS_CHILD | WS_VISIBLE | SS_LEFT,
+            10, 10, 220, 15, hWnd, NULL, hInst, NULL);
+
+        // Создание шрифта "Gulim" (вариант 10)
+        hFont = CreateFont(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, 0,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Gulim");
+
+        // Установка шрифта для статического текста
+        SendMessage(hTxt, WM_SETFONT, (WPARAM)hFont, 0);
+
+        // Создание группы переключателей
+        hGbox = CreateWindowEx(NULL, L"BUTTON", L"Задание цвета",
+            WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
+            10, 50, 250, 150, hWnd, (HMENU)ID_BUTTON_3, hInst, NULL);
+
+        // Создание кнопок-переключателей в группе
+        hBtnChkR = CreateWindowEx(NULL, L"BUTTON", L"Красный цвет",
+            WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+            25, 20, 200, 25, hGbox, (HMENU)ID_BUTTON_R, hInst, NULL);
+
+        hBtnChkG = CreateWindowEx(NULL, L"BUTTON", L"Зеленый цвет",
+            WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+            25, 70, 200, 25, hGbox, (HMENU)ID_BUTTON_G, hInst, NULL);
+
+        hBtnChkB = CreateWindowEx(NULL, L"BUTTON", L"Синий цвет",
+            WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+            25, 120, 200, 25, hGbox, (HMENU)ID_BUTTON_B, hInst, NULL);
+
+        // Установка обработчика сообщений для группы переключателей
+        OldGroupBoxProc = (WNDPROC)GetWindowLongPtr(hGbox, GWLP_WNDPROC);
+        SetWindowLongPtr(hGbox, GWLP_WNDPROC, (LONG_PTR)GroupBoxProc);
+
+        // Создание горизонтальной полосы прокрутки
+        hSbar = CreateWindowEx(NULL, L"SCROLLBAR", NULL,
+            WS_CHILD | WS_VISIBLE | SBS_HORZ | SBS_BOTTOMALIGN,
+            10, 220, 250, 20, hWnd, NULL, hInst, NULL);
+
+        // Установка диапазона для полосы прокрутки (0-255)
+        SetScrollRange(hSbar, SB_CTL, 0, 255, TRUE);
+
+        // Создание списка для сегментных регистров
+        hList = CreateWindowEx(NULL, L"LISTBOX", L"Сегментные регистры",
+            WS_CHILD | WS_VISIBLE | LBS_STANDARD,
+            270, 50, 250, 100, hWnd, (HMENU)ID_LIST, hInst, NULL);
+
+        // Создание комбинированного списка
+        hCombo = CreateWindowEx(NULL, L"COMBOBOX", NULL,
+            WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | CBS_AUTOHSCROLL,
+            270, 150, 250, 150, hWnd, (HMENU)ID_COMBO, hInst, NULL);
+
+        break;
+
+    case WM_DESTROY:
+        if (hFont) DeleteObject(hFont); // Удаление шрифта
+        PostQuitMessage(0);
+        break;
+
+    case WM_COMMAND:
+        wmId    = LOWORD(wParam);
+        wmEvent = HIWORD(wParam);
+        
+        // Обработка сообщений от меню и элементов управления
+        switch (wmId)
+        {
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+            
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
+            
+        case ID_POS_WIN: // Обработка пункта меню "Положение окна"
+            if (flagChk == 0) // если флаг на кнопке не установлен
+            {
+                CheckMenuItem(GetMenu(hWnd), ID_POS_WIN, MF_BYCOMMAND | MF_CHECKED);
+                flagChk = 1; // установка флага переключения
+            }
+            else
+            {
+                CheckMenuItem(GetMenu(hWnd), ID_POS_WIN, MF_BYCOMMAND | MF_UNCHECKED);
+                flagChk = 0; // снятие флага-переключателя
+            }
+            break;
+            
+        case ID_BUTTON_R: // Обработка переключателя красного цвета
+            CodeColor = 0;
+            SetScrollPos(hSbar, SB_CTL, iColor[0], TRUE);
+            break;
+            
+        case ID_BUTTON_G: // Обработка переключателя зеленого цвета
+            CodeColor = 1;
+            SetScrollPos(hSbar, SB_CTL, iColor[1], TRUE);
+            break;
+            
+        case ID_BUTTON_B: // Обработка переключателя синего цвета
+            CodeColor = 2;
+            SetScrollPos(hSbar, SB_CTL, iColor[2], TRUE);
+            break;
+            
+        case ID_COLOR: // Обработка пункта меню "Изменить цвет фона"
+            ColorBrush = CreateSolidBrush(RGB(iColor[0], iColor[1], iColor[2]));
+            SetClassLong(hWnd, GCL_HBRBACKGROUND, (LONG)ColorBrush);
+            InvalidateRect(hWnd, NULL, TRUE);
+            UpdateWindow(hWnd);
+            break;
+            
+        case ID_REGISTERS: // Обработка пункта меню "Сегментные регистры"
+            {
+                TCHAR szASM[80]; // Строка-буфер для конвертации регистров
+                USHORT regCS, regDS, regES, regSS; // Данные сегментных регистров
+                
+                // Ассемблерная вставка для получения значений регистров
+                _asm
+                {
+                    mov regCS, CS
+                    mov regDS, DS
+                    mov regES, ES
+                    mov regSS, SS
+                }
+                
+                // Очистка списка перед добавлением новых строк
+                while (SendMessage(hList, LB_DELETESTRING, 0, 0) != LB_ERR);
+                
+                // Установка шрифта для списка
+                SendMessage(hList, WM_SETFONT, (WPARAM)hFont, 0);
+                
+                // Добавление строк с данными регистров в список
+                _stprintf_s(szASM, L"Данные регистра CS : %X", regCS);
+                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)szASM);
+                
+                _stprintf_s(szASM, L"Данные регистра DS : %X", regDS);
+                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)szASM);
+                
+                _stprintf_s(szASM, L"Данные регистра ES : %X", regES);
+                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)szASM);
+                
+                _stprintf_s(szASM, L"Данные регистра SS : %X", regSS);
+                SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)szASM);
+            }
+            break;
+            
+        case ID_LIST: // Обработка сообщения от LISTBOX
+            if (HIWORD(wParam) == LBN_DBLCLK) // Проверка двойного клика
+            {
+                ListItem = (int)SendMessage(hList, LB_GETCURSEL, 0, 0);
+                if (ListItem != LB_ERR)
+                {
+                    SendMessage(hList, LB_GETTEXT, ListItem, (LPARAM)buf);
+                    MessageBox(hWnd, buf, L"Выбрана строка", MB_OK);
+                }
+            }
+            break;
+            
+        case IDM_CLOSE: // Обработка пункта меню "Закрыть внешнее окно"
+            while (SendMessage(hCombo, CB_DELETESTRING, 0, 0) != CB_ERR); // Очистка списка
+            EnumWindows(&EnumWindowsProc, 0); // Получение списка открытых окон
+            break;
+            
+        case ID_COMBO: // Обработка сообщения от COMBOBOX
+            if (HIWORD(wParam) == LBN_DBLCLK) // Проверка двойного клика
+            {
+                ListItem = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0);
+                if (ListItem != CB_ERR)
+                {
+                    SendMessage(hCombo, CB_GETLBTEXT, ListItem, (LPARAM)buf);
+                    HWND hExtWnd = FindWindow(NULL, buf);
+                    if (hExtWnd == NULL)
+                    {
+                        MessageBox(hWnd, L"Окно не найдено!", L"Ошибка", MB_OK);
+                    }
+                    else
+                    {
+                        PostMessage(hExtWnd, WM_QUIT, 0, 0);
+                        hExtWnd = NULL;
+                        SendMessage(hCombo, CB_DELETESTRING, ListItem, 0);
+                    }
+                }
+            }
+            break;
+            
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+        break;
+        
+    case WM_MOVE: // Обработка перемещения окна
+        if (flagChk) // Если установлен маркер
+        {
+            posX = LOWORD(lParam); // Позиция X окна
+            posY = HIWORD(lParam); // Позиция Y окна
+            _stprintf_s(buf, L"Положение окна : %4d x %4d", posX, posY);
+            SetWindowText(hTxt, buf); // Обновление текста
+        }
+        break;
+        
+    case WM_HSCROLL: // Обработка горизонтальной полосы прокрутки
+        switch (LOWORD(wParam))
+        {
+        case SB_PAGERIGHT: // Перемещение на страницу вправо
+            iColor[CodeColor] += 10;
+            break;
+            
+        case SB_PAGELEFT: // Перемещение на страницу влево
+            iColor[CodeColor] -= 10;
+            break;
+            
+        case SB_LINERIGHT: // Перемещение на строку вправо
+            iColor[CodeColor]++;
+            break;
+            
+        case SB_LINELEFT: // Перемещение на строку влево
+            iColor[CodeColor]--;
+            break;
+        }
+        
+        // Ограничение значений цвета (0-255)
+        if (iColor[CodeColor] > 255) iColor[CodeColor] = 255;
+        if (iColor[CodeColor] < 0) iColor[CodeColor] = 0;
+        
+        // Отображение кода цвета, если не установлен маркер
+        if (flagChk == 0)
+        {
+            _stprintf_s(buf, L"Код выбранного цвета : %4d", iColor[CodeColor]);
+            SetWindowText(hTxt, buf);
+        }
+        
+        // Установка новой позиции ползунка
+        SetScrollPos(hSbar, SB_CTL, iColor[CodeColor], TRUE);
+        break;
+        
+    case WM_PAINT:
+        hdc = BeginPaint(hWnd, &ps);
+        // Здесь можно добавить код рисования
+        EndPaint(hWnd, &ps);
+        break;
+        
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+// Обработчик сообщений для окна "О программе"
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
 }
