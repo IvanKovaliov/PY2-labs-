@@ -1,121 +1,192 @@
-#include <windows.h>
-#include <commctrl.h>
-#include <tchar.h>
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
 
-#pragma comment(lib, "comctl32.lib")
+namespace Lab11_PriceList
+{
+    // Класс, представляющий товар (процессор)
+    class Product
+    {
+        public string Name { get; set; }
+        public decimal Price { get; set; }
 
-#define ID_BUTTON 1001
-#define ID_STATIC 1002
-#define ID_GROUP 1003
-#define ID_RED 1004
-#define ID_GREEN 1005
-#define ID_BLUE 1006
-#define ID_SCROLL 1007
-#define ID_LIST 1008
-#define ID_COMBO 1009
+        public Product(string name, decimal price)
+        {
+            Name = name;
+            Price = price;
+        }
 
-HINSTANCE hInst;
-HWND hStatic, hGroup, hScroll, hList, hCombo;
-static HWND hRedBtn, hGreenBtn, hBlueBtn;
-static int colorCode = 0;
-
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void AddControls(HWND hwnd);
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    hInst = hInstance;
-    HWND hwnd;
-    MSG messages;
-    WNDCLASSEX wincl;
-
-    wincl.hInstance = hInstance;
-    wincl.lpszClassName = _T("WindowsApp");
-    wincl.lpfnWndProc = WndProc;
-    wincl.style = CS_HREDRAW | CS_VREDRAW;
-    wincl.cbSize = sizeof(WNDCLASSEX);
-    wincl.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    wincl.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
-    wincl.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wincl.lpszMenuName = NULL;
-    wincl.cbClsExtra = 0;
-    wincl.cbWndExtra = 0;
-    wincl.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
-
-    RegisterClassEx(&wincl);
-    hwnd = CreateWindowEx(
-        0,
-        _T("WindowsApp"),
-        _T("Приложение на WinAPI"),
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT, 500, 400,
-        HWND_DESKTOP, NULL, hInstance, NULL
-    );
-
-    while (GetMessage(&messages, NULL, 0, 0)) {
-        TranslateMessage(&messages);
-        DispatchMessage(&messages);
+        public override string ToString()
+        {
+            return $"{Name} - {Price} руб.";
+        }
     }
-    return messages.wParam;
-}
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_CREATE:
-            AddControls(hwnd);
-            break;
+    // Класс, представляющий прайс-лист
+    class PriceList
+    {
+        private List<Product> products = new List<Product>();
 
-        case WM_COMMAND:
-            if (LOWORD(wParam) == ID_BUTTON) {
-                TCHAR buffer[256];
-                GetWindowText(hStatic, buffer, 256);
-                MessageBox(hwnd, buffer, _T("Данные статического текста"), MB_OK);
-            }
-            break;
+        // Добавление товара в прайс-лист
+        public void AddProduct(Product product)
+        {
+            products.Add(product);
+        }
 
-        case WM_HSCROLL:
-            if ((HWND)lParam == hScroll) {
-                int pos = GetScrollPos(hScroll, SB_CTL);
-                pos = (LOWORD(wParam) == SB_LINELEFT) ? pos - 1 : pos + 1;
-                SetScrollPos(hScroll, SB_CTL, pos, TRUE);
-                InvalidateRect(hwnd, NULL, TRUE);
-            }
-            break;
-
-        case WM_PAINT:
+        // Вывод всех товаров на экран
+        public void DisplayAll()
+        {
+            Console.WriteLine("Прайс-лист процессоров:");
+            Console.WriteLine("-----------------------");
+            foreach (var product in products)
             {
-                PAINTSTRUCT ps;
-                HDC hdc = BeginPaint(hwnd, &ps);
-                // Отображение цветов и текста
-                EndPaint(hwnd, &ps);
+                Console.WriteLine(product);
             }
-            break;
+            Console.WriteLine();
+        }
 
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            break;
+        // Сортировка по названию товара
+        public void SortByName()
+        {
+            products = products.OrderBy(p => p.Name).ToList();
+        }
 
-        default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
+        // Сортировка по цене
+        public void SortByPrice()
+        {
+            products = products.OrderBy(p => p.Price).ToList();
+        }
+
+        // Поиск самого дорогого товара
+        public Product FindMostExpensive()
+        {
+            return products.OrderByDescending(p => p.Price).FirstOrDefault();
+        }
+
+        // Поиск самого дешевого товара
+        public Product FindCheapest()
+        {
+            return products.OrderBy(p => p.Price).FirstOrDefault();
+        }
+
+        // Сохранение в файл
+        public void SaveToFile(string filename)
+        {
+            using (StreamWriter writer = new StreamWriter(filename))
+            {
+                foreach (var product in products)
+                {
+                    writer.WriteLine($"{product.Name};{product.Price}");
+                }
+            }
+            Console.WriteLine($"Прайс-лист сохранен в файл {filename}");
+        }
+
+        // Загрузка из файла
+        public void LoadFromFile(string filename)
+        {
+            products.Clear();
+            try
+            {
+                using (StreamReader reader = new StreamReader(filename))
+                {
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        string[] parts = line.Split(';');
+                        if (parts.Length == 2 && decimal.TryParse(parts[1], out decimal price))
+                        {
+                            products.Add(new Product(parts[0], price));
+                        }
+                    }
+                }
+                Console.WriteLine($"Прайс-лист загружен из файла {filename}");
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine($"Файл {filename} не найден. Будет создан новый прайс-лист.");
+            }
+        }
     }
-    return 0;
-}
 
-void AddControls(HWND hwnd) {
-    hStatic = CreateWindowEx(0, _T("STATIC"), _T("Положение окна: "), WS_CHILD | WS_VISIBLE, 10, 10, 200, 20, hwnd, (HMENU)ID_STATIC, hInst, NULL);
-    CreateWindowEx(0, _T("BUTTON"), _T("Закрыть приложение"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 10, 40, 150, 30, hwnd, (HMENU)ID_BUTTON, hInst, NULL);
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.InputEncoding = Encoding.UTF8;
 
-    hGroup = CreateWindowEx(0, _T("BUTTON"), _T("Выберите цвет"), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, 10, 80, 200, 100, hwnd, (HMENU)ID_GROUP, hInst, NULL);
-    hRedBtn = CreateWindowEx(0, _T("BUTTON"), _T("Красный"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 20, 100, 100, 30, hwnd, (HMENU)ID_RED, hInst, NULL);
-    hGreenBtn = CreateWindowEx(0, _T("BUTTON"), _T("Зеленый"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 20, 130, 100, 30, hwnd, (HMENU)ID_GREEN, hInst, NULL);
-    hBlueBtn = CreateWindowEx(0, _T("BUTTON"), _T("Синий"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 20, 160, 100, 30, hwnd, (HMENU)ID_BLUE, hInst, NULL);
+            PriceList priceList = new PriceList();
 
-    hScroll = CreateWindowEx(0, _T("SCROLLBAR"), NULL, WS_CHILD | WS_VISIBLE | SBS_HORZ, 10, 220, 200, 30, hwnd, (HMENU)ID_SCROLL, hInst, NULL);
-    SetScrollRange(hScroll, SB_CTL, 0, 255, TRUE);
+            // Загрузка данных из файла (если он существует)
+            priceList.LoadFromFile("Процессоры.txt");
 
-    hList = CreateWindowEx(0, _T("LISTBOX"), NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD, 220, 10, 250, 200, hwnd, (HMENU)ID_LIST, hInst, NULL);
-    hCombo = CreateWindowEx(0, _T("COMBOBOX"), NULL, WS_CHILD | WS_VISIBLE | CBS_DROPDOWN, 220, 220, 250, 200, hwnd, (HMENU)ID_COMBO, hInst, NULL);
+            // Если файл был пустой, добавляем демонстрационные данные
+            if (priceList.FindCheapest() == null)
+            {
+                // Добавление демонстрационных данных (процессоров)
+                priceList.AddProduct(new Product("Intel Core i9-13900K", 58990));
+                priceList.AddProduct(new Product("AMD Ryzen 9 7950X", 54990));
+                priceList.AddProduct(new Product("Intel Core i7-13700K", 38990));
+                priceList.AddProduct(new Product("AMD Ryzen 7 7700X", 29990));
+                priceList.AddProduct(new Product("Intel Core i5-13600K", 27990));
+                priceList.AddProduct(new Product("AMD Ryzen 5 7600X", 22990));
+                priceList.AddProduct(new Product("Intel Core i3-13100F", 11990));
+                priceList.AddProduct(new Product("AMD Ryzen 3 4100", 8990));
+            }
 
-    SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)_T("Приложение 1"));
-    SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)_T("Приложение 2"));
-    SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)_T("Приложение 3"));
+            bool exit = false;
+            while (!exit)
+            {
+                Console.WriteLine("Меню:");
+                Console.WriteLine("1. Показать весь прайс-лист");
+                Console.WriteLine("2. Сортировать по названию");
+                Console.WriteLine("3. Сортировать по цене");
+                Console.WriteLine("4. Найти самый дорогой процессор");
+                Console.WriteLine("5. Найти самый дешевый процессор");
+                Console.WriteLine("6. Сохранить прайс-лист в файл");
+                Console.WriteLine("7. Выход");
+                Console.Write("Выберите действие: ");
+
+                string choice = Console.ReadLine();
+                Console.WriteLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        priceList.DisplayAll();
+                        break;
+                    case "2":
+                        priceList.SortByName();
+                        Console.WriteLine("Прайс-лист отсортирован по названию.");
+                        priceList.DisplayAll();
+                        break;
+                    case "3":
+                        priceList.SortByPrice();
+                        Console.WriteLine("Прайс-лист отсортирован по цене.");
+                        priceList.DisplayAll();
+                        break;
+                    case "4":
+                        Product expensive = priceList.FindMostExpensive();
+                        Console.WriteLine($"Самый дорогой процессор: {expensive}");
+                        break;
+                    case "5":
+                        Product cheap = priceList.FindCheapest();
+                        Console.WriteLine($"Самый дешевый процессор: {cheap}");
+                        break;
+                    case "6":
+                        priceList.SaveToFile("Процессоры.txt");
+                        break;
+                    case "7":
+                        exit = true;
+                        break;
+                    default:
+                        Console.WriteLine("Неверный выбор. Попробуйте снова.");
+                        break;
+                }
+            }
+        }
+    }
 }
