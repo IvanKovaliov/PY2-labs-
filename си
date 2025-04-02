@@ -1,0 +1,239 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+namespace Lab11_FileInput
+{
+    class Processor
+    {
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+
+        public Processor(string name, decimal price)
+        {
+            Name = name;
+            Price = price;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0} - {1} руб.", Name, Price);
+        }
+    }
+
+    class PriceList
+    {
+        private List<Processor> processors = new List<Processor>();
+
+        public void AddProcessor(Processor proc)
+        {
+            processors.Add(proc);
+        }
+
+        public void ShowAll()
+        {
+            if (processors.Count == 0)
+            {
+                Console.WriteLine("Список процессоров пуст!");
+                return;
+            }
+
+            Console.WriteLine("\nТекущий список процессоров:");
+            Console.WriteLine("---------------------------");
+            foreach (Processor p in processors)
+            {
+                Console.WriteLine(p);
+            }
+        }
+
+        public void SortByName()
+        {
+            processors.Sort((x, y) => x.Name.CompareTo(y.Name));
+            Console.WriteLine("\nСписок отсортирован по названию.");
+        }
+
+        public void SortByPrice()
+        {
+            processors.Sort((x, y) => x.Price.CompareTo(y.Price));
+            Console.WriteLine("\nСписок отсортирован по цене.");
+        }
+
+        public void ShowMostExpensive()
+        {
+            if (processors.Count == 0)
+            {
+                Console.WriteLine("Список процессоров пуст!");
+                return;
+            }
+
+            Processor max = processors[0];
+            foreach (Processor p in processors)
+            {
+                if (p.Price > max.Price) max = p;
+            }
+            Console.WriteLine("\nСамый дорогой процессор: " + max);
+        }
+
+        public void ShowCheapest()
+        {
+            if (processors.Count == 0)
+            {
+                Console.WriteLine("Список процессоров пуст!");
+                return;
+            }
+
+            Processor min = processors[0];
+            foreach (Processor p in processors)
+            {
+                if (p.Price < min.Price) min = p;
+            }
+            Console.WriteLine("\nСамый дешевый процессор: " + min);
+        }
+
+        public void SaveToFile(string path)
+        {
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(path))
+                {
+                    foreach (Processor p in processors)
+                    {
+                        writer.WriteLine(p.Name + "|" + p.Price);
+                    }
+                }
+                Console.WriteLine("\nДанные успешно сохранены в файл: " + path);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\nОшибка при сохранении: " + ex.Message);
+            }
+        }
+
+        public void LoadFromFile(string path)
+        {
+            processors.Clear();
+            try
+            {
+                if (File.Exists(path))
+                {
+                    using (StreamReader reader = new StreamReader(path))
+                    {
+                        string line;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            string[] parts = line.Split('|');
+                            if (parts.Length == 2)
+                            {
+                                string name = parts[0];
+                                decimal price;
+                                if (decimal.TryParse(parts[1], out price))
+                                {
+                                    processors.Add(new Processor(name, price));
+                                }
+                            }
+                        }
+                    }
+                    Console.WriteLine("\nДанные успешно загружены из файла: " + path);
+                }
+                else
+                {
+                    Console.WriteLine("\nФайл не найден! Создан пустой список.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\nОшибка при загрузке: " + ex.Message);
+            }
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.Title = "Управление прайс-листом процессоров";
+            PriceList priceList = new PriceList();
+
+            // Запрос пути к файлу
+            Console.WriteLine("Введите путь к файлу с данными (например: C:\\data\\processors.txt)");
+            Console.Write("Или нажмите Enter для использования файла по умолчанию: ");
+            string filePath = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                filePath = "processors.txt";
+            }
+
+            // Загрузка данных
+            priceList.LoadFromFile(filePath);
+
+            // Если файл пустой, добавляем демо-данные
+            if (priceList.GetProcessorCount() == 0)
+            {
+                Console.WriteLine("\nДобавляем демонстрационные данные...");
+                priceList.AddProcessor(new Processor("Intel Core i5-12400", 18990));
+                priceList.AddProcessor(new Processor("AMD Ryzen 5 5600X", 17990));
+                priceList.AddProcessor(new Processor("Intel Core i7-12700K", 34990));
+                priceList.AddProcessor(new Processor("AMD Ryzen 7 5800X3D", 32990));
+            }
+
+            bool running = true;
+            while (running)
+            {
+                Console.WriteLine("\nМЕНЮ:");
+                Console.WriteLine("1. Показать все процессоры");
+                Console.WriteLine("2. Сортировать по названию");
+                Console.WriteLine("3. Сортировать по цене");
+                Console.WriteLine("4. Показать самый дорогой");
+                Console.WriteLine("5. Показать самый дешевый");
+                Console.WriteLine("6. Сохранить в файл");
+                Console.WriteLine("7. Загрузить другой файл");
+                Console.WriteLine("8. Выход");
+                Console.Write("Выберите действие: ");
+
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        priceList.ShowAll();
+                        break;
+                    case "2":
+                        priceList.SortByName();
+                        priceList.ShowAll();
+                        break;
+                    case "3":
+                        priceList.SortByPrice();
+                        priceList.ShowAll();
+                        break;
+                    case "4":
+                        priceList.ShowMostExpensive();
+                        break;
+                    case "5":
+                        priceList.ShowCheapest();
+                        break;
+                    case "6":
+                        Console.Write("\nВведите путь для сохранения (Enter для текущего файла): ");
+                        string savePath = Console.ReadLine();
+                        if (string.IsNullOrWhiteSpace(savePath))
+                        {
+                            savePath = filePath;
+                        }
+                        priceList.SaveToFile(savePath);
+                        break;
+                    case "7":
+                        Console.Write("\nВведите новый путь к файлу: ");
+                        filePath = Console.ReadLine();
+                        priceList.LoadFromFile(filePath);
+                        break;
+                    case "8":
+                        running = false;
+                        break;
+                    default:
+                        Console.WriteLine("\nНеверный выбор! Попробуйте снова.");
+                        break;
+                }
+            }
+        }
+    }
+}
