@@ -1,255 +1,176 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
-namespace AdvancedPriceList2010
+namespace RussianPriceListProcessor
 {
-    // Класс для представления процессора
-    class Processor : IComparable<Processor>
+    public class Processor
     {
-        public string Name { get; set; }
-        public decimal Price { get; set; }
-        public string Socket { get; set; }
-        public int Cores { get; set; }
-        public double Frequency { get; set; }
+        public string Название { get; set; }
+        public decimal Цена { get; set; }
+        public string Сокет { get; set; }
+        public int Ядра { get; set; }
+        public double Частота { get; set; }
 
-        public Processor(string name, decimal price, string socket, int cores, double freq)
+        public Processor(string название, decimal цена, string сокет, int ядра, double частота)
         {
-            Name = name;
-            Price = price;
-            Socket = socket;
-            Cores = cores;
-            Frequency = freq;
-        }
-
-        public int CompareTo(Processor other)
-        {
-            return this.Name.CompareTo(other.Name);
+            Название = название;
+            Цена = цена;
+            Сокет = сокет;
+            Ядра = ядра;
+            Частота = частота;
         }
 
         public override string ToString()
         {
-            return string.Format("{0} (Socket: {1}, {2} ядер, {3} GHz) - {4} руб.", 
-                Name, Socket, Cores, Frequency, Price);
+            return $"{Название} (Сокет: {Сокет}, {Ядра} ядер, {Частота} GHz) - {Цена} руб.";
         }
 
         public string ToFileString()
         {
-            return string.Format("{0}|{1}|{2}|{3}|{4}", Name, Price, Socket, Cores, Frequency);
+            return $"{Название}|{Цена}|{Сокет}|{Ядра}|{Частота}";
         }
     }
 
-    // Класс для работы с прайс-листом
-    class PriceListManager
+    public class МенеджерПрайслиста
     {
-        private List<Processor> processors = new List<Processor>();
-        private string currentFilePath = "processors.txt";
+        private List<Processor> процессоры = new List<Processor>();
+        private string текущийФайл = "процессоры.txt";
 
-        // Загрузка данных из файла
-        public bool LoadFromFile(string filePath)
+        public bool ЗагрузитьИзФайла(string путьФайла)
         {
             try
             {
-                if (!File.Exists(filePath))
+                if (!File.Exists(путьФайла))
                 {
-                    Console.WriteLine("Файл не найден. Будет создан новый.");
-                    currentFilePath = filePath;
+                    Console.WriteLine("Файл не найден. Создан новый список.");
+                    текущийФайл = путьФайла;
                     return false;
                 }
 
-                processors.Clear();
-                using (StreamReader reader = new StreamReader(filePath, Encoding.UTF8))
+                процессоры.Clear();
+                string[] строки = File.ReadAllLines(путьФайла, Encoding.GetEncoding(1251));
+                
+                foreach (string строка in строки)
                 {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
+                    if (string.IsNullOrWhiteSpace(строка)) continue;
+
+                    string[] части = строка.Split('|');
+                    if (части.Length == 5)
                     {
-                        if (string.IsNullOrWhiteSpace(line)) continue;
-
-                        string[] parts = line.Split('|');
-                        if (parts.Length == 5)
+                        string название = части[0].Trim();
+                        string сокет = части[2].Trim();
+                        
+                        if (decimal.TryParse(части[1], out decimal цена) &&
+                            int.TryParse(части[3], out int ядра) &&
+                            double.TryParse(части[4], out double частота))
                         {
-                            string name = parts[0];
-                            decimal price;
-                            int cores;
-                            double freq;
-
-                            if (decimal.TryParse(parts[1], out price) && 
-                                int.TryParse(parts[3], out cores) && 
-                                double.TryParse(parts[4], out freq))
-                            {
-                                processors.Add(new Processor(
-                                    name, 
-                                    price, 
-                                    parts[2], 
-                                    cores, 
-                                    freq));
-                            }
+                            процессоры.Add(new Processor(название, цена, сокет, ядра, частота));
                         }
                     }
                 }
-                currentFilePath = filePath;
-                Console.WriteLine("Данные успешно загружены из: " + filePath);
+
+                текущийФайл = путьФайла;
+                Console.WriteLine($"Успешно загружено {процессоры.Count} процессоров из {путьФайла}");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Ошибка загрузки: " + ex.Message);
+                Console.WriteLine($"Ошибка загрузки файла: {ex.Message}");
                 return false;
             }
         }
 
-        // Сохранение данных в файл
-        public bool SaveToFile(string filePath = null)
+        public bool СохранитьВФайл(string путьФайла = null)
         {
             try
             {
-                string path = filePath ?? currentFilePath;
-                using (StreamWriter writer = new StreamWriter(path, false, Encoding.UTF8))
-                {
-                    foreach (Processor p in processors)
-                    {
-                        writer.WriteLine(p.ToFileString());
-                    }
-                }
-                Console.WriteLine("Данные сохранены в: " + path);
+                string путь = путьФайла ?? текущийФайл;
+                List<string> строки = процессоры.Select(p => p.ToFileString()).ToList();
+                File.WriteAllLines(путь, строки, Encoding.GetEncoding(1251));
+                Console.WriteLine($"Данные сохранены в {путь}");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Ошибка сохранения: " + ex.Message);
+                Console.WriteLine($"Ошибка сохранения файла: {ex.Message}");
                 return false;
             }
         }
 
-        // Добавление нового процессора
-        public void AddProcessor(Processor processor)
+        public void ДобавитьПроцессор(Processor процессор)
         {
-            processors.Add(processor);
+            процессоры.Add(процессор);
         }
 
-        // Добавление нового процессора с консоли
-        public void AddProcessorFromConsole()
+        public bool УдалитьПроцессор(int индекс)
         {
-            Console.WriteLine("\nДобавление нового процессора:");
-            
-            Console.Write("Название: ");
-            string name = Console.ReadLine();
-            
-            Console.Write("Цена: ");
-            decimal price;
-            while (!decimal.TryParse(Console.ReadLine(), out price))
-            {
-                Console.Write("Некорректная цена. Введите снова: ");
-            }
-            
-            Console.Write("Сокет: ");
-            string socket = Console.ReadLine();
-            
-            Console.Write("Количество ядер: ");
-            int cores;
-            while (!int.TryParse(Console.ReadLine(), out cores))
-            {
-                Console.Write("Некорректное число. Введите снова: ");
-            }
-            
-            Console.Write("Частота (GHz): ");
-            double freq;
-            while (!double.TryParse(Console.ReadLine(), out freq))
-            {
-                Console.Write("Некорректное значение. Введите снова: ");
-            }
+            if (индекс < 0 || индекс >= процессоры.Count)
+                return false;
 
-            AddProcessor(new Processor(name, price, socket, cores, freq));
-            Console.WriteLine("Процессор успешно добавлен!");
+            процессоры.RemoveAt(индекс);
+            return true;
         }
 
-        // Вывод всех процессоров
-        public void DisplayAll()
+        public void ПоказатьВсе()
         {
-            if (processors.Count == 0)
+            if (процессоры.Count == 0)
             {
                 Console.WriteLine("Список процессоров пуст!");
                 return;
             }
 
             Console.WriteLine("\nСписок процессоров:");
-            Console.WriteLine("----------------------------------------------------------------");
-            for (int i = 0; i < processors.Count; i++)
+            Console.WriteLine(new string('-', 80));
+            for (int i = 0; i < процессоры.Count; i++)
             {
-                Console.WriteLine("{0}. {1}", i + 1, processors[i]);
+                Console.WriteLine($"{i + 1}. {процессоры[i]}");
             }
         }
 
-        // Сортировка по разным критериям
-        public void SortBy(Func<Processor, IComparable> keySelector, string sortName)
-        {
-            processors.Sort((x, y) => keySelector(x).CompareTo(keySelector(y)));
-            Console.WriteLine("\nСортировка по {0} выполнена.", sortName);
-        }
+        public void СортироватьПоНазванию() => процессоры.Sort((a, b) => a.Название.CompareTo(b.Название));
+        public void СортироватьПоЦене() => процессоры.Sort((a, b) => a.Цена.CompareTo(b.Цена));
+        public void СортироватьПоСокету() => процессоры.Sort((a, b) => a.Сокет.CompareTo(b.Сокет));
+        public void СортироватьПоЯдрам() => процессоры.Sort((a, b) => a.Ядра.CompareTo(b.Ядра));
+        public void СортироватьПоЧастоте() => процессоры.Sort((a, b) => a.Частота.CompareTo(b.Частота));
 
-        // Поиск по критериям
-        public List<Processor> Search(Func<Processor, bool> predicate)
-        {
-            return processors.FindAll(new Predicate<Processor>(predicate));
-        }
+        public List<Processor> ПоискПоНазванию(string частьНазвания) => 
+            процессоры.Where(p => p.Название.Contains(частьНазвания)).ToList();
 
-        // Удаление процессора
-        public bool RemoveProcessor(int index)
-        {
-            if (index < 0 || index >= processors.Count)
-                return false;
+        public List<Processor> ПоискПоЦене(decimal максЦена) => 
+            процессоры.Where(p => p.Цена <= максЦена).ToList();
 
-            processors.RemoveAt(index);
-            return true;
-        }
+        public List<Processor> ПоискПоСокету(string сокет) => 
+            процессоры.Where(p => p.Сокет.Equals(сокет, StringComparison.OrdinalIgnoreCase)).ToList();
 
-        // Получение количества процессоров
-        public int Count
-        {
-            get { return processors.Count; }
-        }
+        public List<Processor> ПоискПоЯдрам(int минЯдра) => 
+            процессоры.Where(p => p.Ядра >= минЯдра).ToList();
 
-        // Получение текущего пути файла
-        public string CurrentFilePath
-        {
-            get { return currentFilePath; }
-        }
+        public int Количество => процессоры.Count;
+        public string ТекущийФайл => текущийФайл;
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            Console.OutputEncoding = Encoding.UTF8;
+            // Настройка кодировок для поддержки русского языка
+            Console.OutputEncoding = Encoding.GetEncoding(1251);
             Console.InputEncoding = Encoding.GetEncoding(1251);
 
-            PriceListManager manager = new PriceListManager();
-            
-            // Загрузка файла при запуске
-            Console.WriteLine("Программа управления прайс-листом процессоров");
-            Console.Write("Введите путь к файлу данных (Enter для processors.txt): ");
-            string filePath = Console.ReadLine();
-            
-            if (string.IsNullOrWhiteSpace(filePath))
-                filePath = "processors.txt";
+            МенеджерПрайслиста менеджер = new МенеджерПрайслиста();
+            Console.WriteLine("=== Управление прайс-листом процессоров ===");
 
-            if (!manager.LoadFromFile(filePath))
-            {
-                // Добавление демо-данных если файл не загрузился
-                Console.WriteLine("\nДобавляем демонстрационные данные...");
-                manager.AddProcessor(new Processor("Intel Core i5-12400", 18990, "LGA1700", 6, 2.5));
-                manager.AddProcessor(new Processor("AMD Ryzen 5 5600X", 17990, "AM4", 6, 3.7));
-                manager.AddProcessor(new Processor("Intel Core i7-12700K", 34990, "LGA1700", 12, 3.6));
-                manager.AddProcessor(new Processor("AMD Ryzen 7 5800X3D", 32990, "AM4", 8, 3.4));
-                manager.SaveToFile();
-            }
+            // Загрузка файла
+            ЗагрузитьФайл(менеджер);
 
-            bool exit = false;
-            while (!exit)
+            bool работает = true;
+            while (работает)
             {
-                Console.WriteLine("\n=== ГЛАВНОЕ МЕНЮ ===");
-                Console.WriteLine("Текущий файл: {0}", manager.CurrentFilePath);
+                Console.WriteLine("\nГлавное меню:");
+                Console.WriteLine($"Текущий файл: {менеджер.ТекущийФайл}");
                 Console.WriteLine("1. Просмотреть все процессоры");
                 Console.WriteLine("2. Добавить процессор");
                 Console.WriteLine("3. Удалить процессор");
@@ -260,154 +181,223 @@ namespace AdvancedPriceList2010
                 Console.WriteLine("8. Выход");
                 Console.Write("Выберите действие: ");
 
-                string choice = Console.ReadLine();
-                Console.WriteLine();
-
-                switch (choice)
+                switch (Console.ReadLine())
                 {
-                    case "1": // Просмотр
-                        manager.DisplayAll();
+                    case "1":
+                        менеджер.ПоказатьВсе();
                         break;
 
-                    case "2": // Добавление
-                        manager.AddProcessorFromConsole();
+                    case "2":
+                        ДобавитьНовыйПроцессор(менеджер);
                         break;
 
-                    case "3": // Удаление
-                        manager.DisplayAll();
-                        if (manager.Count > 0)
-                        {
-                            Console.Write("\nВведите номер процессора для удаления: ");
-                            int index;
-                            if (int.TryParse(Console.ReadLine(), out index) && index > 0 && index <= manager.Count)
-                            {
-                                if (manager.RemoveProcessor(index - 1))
-                                    Console.WriteLine("Процессор удален!");
-                                else
-                                    Console.WriteLine("Ошибка удаления!");
-                            }
-                            else
-                            {
-                                Console.WriteLine("Некорректный номер!");
-                            }
-                        }
+                    case "3":
+                        УдалитьПроцессор(менеджер);
                         break;
 
-                    case "4": // Сортировка
-                        Console.WriteLine("Сортировать по:");
-                        Console.WriteLine("1. Названию");
-                        Console.WriteLine("2. Цене");
-                        Console.WriteLine("3. Сокету");
-                        Console.WriteLine("4. Количеству ядер");
-                        Console.WriteLine("5. Частоте");
-                        Console.Write("Выберите критерий: ");
-                        
-                        string sortChoice = Console.ReadLine();
-                        switch (sortChoice)
-                        {
-                            case "1":
-                                manager.SortBy(p => p.Name, "названию");
-                                break;
-                            case "2":
-                                manager.SortBy(p => p.Price, "цене");
-                                break;
-                            case "3":
-                                manager.SortBy(p => p.Socket, "сокету");
-                                break;
-                            case "4":
-                                manager.SortBy(p => p.Cores, "количеству ядер");
-                                break;
-                            case "5":
-                                manager.SortBy(p => p.Frequency, "частоте");
-                                break;
-                            default:
-                                Console.WriteLine("Неверный выбор!");
-                                break;
-                        }
-                        manager.DisplayAll();
+                    case "4":
+                        СортироватьПроцессоры(менеджер);
                         break;
 
-                    case "5": // Поиск
-                        Console.WriteLine("Поиск по:");
-                        Console.WriteLine("1. Названию");
-                        Console.WriteLine("2. Цене (до указанной)");
-                        Console.WriteLine("3. Сокету");
-                        Console.WriteLine("4. Количеству ядер (не менее)");
-                        Console.Write("Выберите критерий: ");
-                        
-                        string searchChoice = Console.ReadLine();
-                        List<Processor> results = null;
-                        
-                        switch (searchChoice)
-                        {
-                            case "1":
-                                Console.Write("Введите часть названия: ");
-                                string namePart = Console.ReadLine();
-                                results = manager.Search(p => p.Name.Contains(namePart));
-                                break;
-                            case "2":
-                                Console.Write("Введите максимальную цену: ");
-                                decimal maxPrice;
-                                if (decimal.TryParse(Console.ReadLine(), out maxPrice))
-                                    results = manager.Search(p => p.Price <= maxPrice);
-                                break;
-                            case "3":
-                                Console.Write("Введите сокет: ");
-                                string socket = Console.ReadLine();
-                                results = manager.Search(p => p.Socket.Equals(socket, StringComparison.OrdinalIgnoreCase)));
-                                break;
-                            case "4":
-                                Console.Write("Введите минимальное количество ядер: ");
-                                int minCores;
-                                if (int.TryParse(Console.ReadLine(), out minCores))
-                                    results = manager.Search(p => p.Cores >= minCores);
-                                break;
-                            default:
-                                Console.WriteLine("Неверный выбор!");
-                                break;
-                        }
-                        
-                        if (results != null)
-                        {
-                            Console.WriteLine("\nРезультаты поиска ({0} шт.):", results.Count);
-                            Console.WriteLine("---------------------------");
-                            foreach (Processor p in results)
-                            {
-                                Console.WriteLine(p);
-                            }
-                        }
+                    case "5":
+                        ИскатьПроцессоры(менеджер);
                         break;
 
-                    case "6": // Сохранение
-                        Console.Write("Введите путь для сохранения (Enter для текущего файла): ");
-                        string savePath = Console.ReadLine();
-                        if (!string.IsNullOrWhiteSpace(savePath))
-                        {
-                            manager.SaveToFile(savePath);
-                        }
-                        else
-                        {
-                            manager.SaveToFile();
-                        }
+                    case "6":
+                        СохранитьДанные(менеджер);
                         break;
 
-                    case "7": // Загрузка другого файла
-                        Console.Write("Введите путь к новому файлу: ");
-                        string newPath = Console.ReadLine();
-                        manager.LoadFromFile(newPath);
+                    case "7":
+                        ЗагрузитьФайл(менеджер);
                         break;
 
-                    case "8": // Выход
-                        exit = true;
+                    case "8":
+                        работает = false;
                         break;
 
                     default:
-                        Console.WriteLine("Неверный выбор! Попробуйте снова.");
+                        Console.WriteLine("Неверный ввод!");
                         break;
                 }
             }
 
-            Console.WriteLine("Работа программы завершена.");
+            Console.WriteLine("Программа завершена. Нажмите любую клавишу...");
+            Console.ReadKey();
+        }
+
+        static void ЗагрузитьФайл(МенеджерПрайслиста менеджер)
+        {
+            Console.Write("\nВведите путь к файлу .txt (Enter для процессоры.txt): ");
+            string путьФайла = Console.ReadLine();
+            путьФайла = string.IsNullOrWhiteSpace(путьФайла) ? "процессоры.txt" : путьФайла;
+
+            if (!менеджер.ЗагрузитьИзФайла(путьФайла) && менеджер.Количество == 0)
+            {
+                Console.WriteLine("\nДобавлены демонстрационные данные:");
+                менеджер.ДобавитьПроцессор(new Processor("Intel Core i5-12400", 18990, "LGA1700", 6, 2.5));
+                менеджер.ДобавитьПроцессор(new Processor("AMD Ryzen 5 5600X", 17990, "AM4", 6, 3.7));
+                менеджер.ДобавитьПроцессор(new Processor("Intel Core i7-12700K", 34990, "LGA1700", 12, 3.6));
+                менеджер.ДобавитьПроцессор(new Processor("AMD Ryzen 7 5800X3D", 32990, "AM4", 8, 3.4));
+                менеджер.ПоказатьВсе();
+            }
+        }
+
+        static void ДобавитьНовыйПроцессор(МенеджерПрайслиста менеджер)
+        {
+            Console.WriteLine("\nДобавление нового процессора:");
+
+            Console.Write("Название: ");
+            string название = Console.ReadLine();
+
+            Console.Write("Цена: ");
+            decimal цена = ПрочитатьDecimal();
+
+            Console.Write("Сокет: ");
+            string сокет = Console.ReadLine();
+
+            Console.Write("Количество ядер: ");
+            int ядра = ПрочитатьInt();
+
+            Console.Write("Частота (GHz): ");
+            double частота = ПрочитатьDouble();
+
+            менеджер.ДобавитьПроцессор(new Processor(название, цена, сокет, ядра, частота));
+            Console.WriteLine("Процессор успешно добавлен!");
+        }
+
+        static void УдалитьПроцессор(МенеджерПрайслиста менеджер)
+        {
+            менеджер.ПоказатьВсе();
+            if (менеджер.Количество == 0) return;
+
+            Console.Write("\nВведите номер процессора для удаления: ");
+            if (int.TryParse(Console.ReadLine(), out int индекс) && индекс > 0 && индекс <= менеджер.Количество)
+            {
+                if (менеджер.УдалитьПроцессор(индекс - 1))
+                    Console.WriteLine("Процессор удален!");
+                else
+                    Console.WriteLine("Ошибка удаления!");
+            }
+            else
+            {
+                Console.WriteLine("Некорректный номер!");
+            }
+        }
+
+        static void СортироватьПроцессоры(МенеджерПрайслиста менеджер)
+        {
+            Console.WriteLine("\nСортировать по:");
+            Console.WriteLine("1. Названию");
+            Console.WriteLine("2. Цене");
+            Console.WriteLine("3. Сокету");
+            Console.WriteLine("4. Количеству ядер");
+            Console.WriteLine("5. Частоте");
+            Console.Write("Выберите критерий: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": менеджер.СортироватьПоНазванию(); break;
+                case "2": менеджер.СортироватьПоЦене(); break;
+                case "3": менеджер.СортироватьПоСокету(); break;
+                case "4": менеджер.СортироватьПоЯдрам(); break;
+                case "5": менеджер.СортироватьПоЧастоте(); break;
+                default: Console.WriteLine("Неверный выбор!"); return;
+            }
+
+            Console.WriteLine("Сортировка выполнена.");
+            менеджер.ПоказатьВсе();
+        }
+
+        static void ИскатьПроцессоры(МенеджерПрайслиста менеджер)
+        {
+            Console.WriteLine("\nПоиск по:");
+            Console.WriteLine("1. Названию");
+            Console.WriteLine("2. Цене (максимальной)");
+            Console.WriteLine("3. Сокету");
+            Console.WriteLine("4. Количеству ядер (минимальному)");
+            Console.Write("Выберите критерий: ");
+
+            List<Processor> результаты = null;
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    Console.Write("Введите часть названия: ");
+                    результаты = менеджер.ПоискПоНазванию(Console.ReadLine());
+                    break;
+                case "2":
+                    Console.Write("Введите максимальную цену: ");
+                    результаты = менеджер.ПоискПоЦене(ПрочитатьDecimal());
+                    break;
+                case "3":
+                    Console.Write("Введите сокет: ");
+                    результаты = менеджер.ПоискПоСокету(Console.ReadLine());
+                    break;
+                case "4":
+                    Console.Write("Введите минимальное количество ядер: ");
+                    результаты = менеджер.ПоискПоЯдрам(ПрочитатьInt());
+                    break;
+                default:
+                    Console.WriteLine("Неверный выбор!");
+                    return;
+            }
+
+            if (результаты != null && результаты.Count > 0)
+            {
+                Console.WriteLine($"\nНайдено {результаты.Count} процессоров:");
+                Console.WriteLine(new string('-', 80));
+                foreach (var p in результаты)
+                {
+                    Console.WriteLine(p);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Процессоры не найдены.");
+            }
+        }
+
+        static void СохранитьДанные(МенеджерПрайслиста менеджер)
+        {
+            Console.Write("\nВведите путь для сохранения (Enter для текущего файла): ");
+            string путь = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(путь))
+            {
+                менеджер.СохранитьВФайл();
+            }
+            else
+            {
+                менеджер.СохранитьВФайл(путь);
+            }
+        }
+
+        static decimal ПрочитатьDecimal()
+        {
+            decimal результат;
+            while (!decimal.TryParse(Console.ReadLine(), out результат))
+            {
+                Console.Write("Некорректный ввод. Попробуйте снова: ");
+            }
+            return результат;
+        }
+
+        static int ПрочитатьInt()
+        {
+            int результат;
+            while (!int.TryParse(Console.ReadLine(), out результат))
+            {
+                Console.Write("Некорректный ввод. Попробуйте снова: ");
+            }
+            return результат;
+        }
+
+        static double ПрочитатьDouble()
+        {
+            double результат;
+            while (!double.TryParse(Console.ReadLine(), out результат))
+            {
+                Console.Write("Некорректный ввод. Попробуйте снова: ");
+            }
+            return результат;
         }
     }
 }
