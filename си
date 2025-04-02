@@ -1,42 +1,48 @@
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace TxtPriceListProcessor
 {
     public class Processor
     {
-        public string Name { get; set; }
-        public decimal Price { get; set; }
-        public string Socket { get; set; }
-        public int Cores { get; set; }
-        public double Frequency { get; set; }
+        private string name;
+        private decimal price;
+        private string socket;
+        private int cores;
+        private double frequency;
+
+        public string Name { get { return name; } set { name = value; } }
+        public decimal Price { get { return price; } set { price = value; } }
+        public string Socket { get { return socket; } set { socket = value; } }
+        public int Cores { get { return cores; } set { cores = value; } }
+        public double Frequency { get { return frequency; } set { frequency = value; } }
 
         public Processor(string name, decimal price, string socket, int cores, double frequency)
         {
-            Name = name;
-            Price = price;
-            Socket = socket;
-            Cores = cores;
-            Frequency = frequency;
+            this.name = name;
+            this.price = price;
+            this.socket = socket;
+            this.cores = cores;
+            this.frequency = frequency;
         }
 
         public override string ToString()
         {
-            return $"{Name} (Socket: {Socket}, {Cores} cores, {Frequency} GHz) - {Price} руб.";
+            return string.Format("{0} (Socket: {1}, {2} cores, {3} GHz) - {4} руб.", 
+                name, socket, cores, frequency, price);
         }
 
         public string ToFileString()
         {
-            return $"{Name}|{Price}|{Socket}|{Cores}|{Frequency}";
+            return string.Format("{0}|{1}|{2}|{3}|{4}", name, price, socket, cores, frequency);
         }
     }
 
     public class PriceListManager
     {
-        private List<Processor> processors = new List<Processor>();
+        private ArrayList processors = new ArrayList();
         private string currentFilePath = "processors.txt";
 
         public bool LoadFromTxtFile(string filePath)
@@ -55,7 +61,7 @@ namespace TxtPriceListProcessor
                 
                 foreach (string line in lines)
                 {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    if (line == null || line.Trim() == "") continue;
 
                     string[] parts = line.Split('|');
                     if (parts.Length == 5)
@@ -63,9 +69,13 @@ namespace TxtPriceListProcessor
                         string name = parts[0].Trim();
                         string socket = parts[2].Trim();
                         
-                        if (decimal.TryParse(parts[1], out decimal price) &&
-                            int.TryParse(parts[3], out int cores) &&
-                            double.TryParse(parts[4], out double frequency))
+                        decimal price;
+                        int cores;
+                        double frequency;
+
+                        if (decimal.TryParse(parts[1], out price) &&
+                            int.TryParse(parts[3], out cores) &&
+                            double.TryParse(parts[4], out frequency))
                         {
                             processors.Add(new Processor(name, price, socket, cores, frequency));
                         }
@@ -73,29 +83,34 @@ namespace TxtPriceListProcessor
                 }
 
                 currentFilePath = filePath;
-                Console.WriteLine($"Успешно загружено {processors.Count} процессоров из {filePath}");
+                Console.WriteLine(string.Format("Успешно загружено {0} процессоров из {1}", 
+                    processors.Count, filePath));
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки файла: {ex.Message}");
+                Console.WriteLine(string.Format("Ошибка загрузки файла: {0}", ex.Message));
                 return false;
             }
         }
 
-        public bool SaveToTxtFile(string filePath = null)
+        public bool SaveToTxtFile(string filePath)
         {
             try
             {
                 string path = filePath ?? currentFilePath;
-                List<string> lines = processors.Select(p => p.ToFileString()).ToList();
+                string[] lines = new string[processors.Count];
+                for (int i = 0; i < processors.Count; i++)
+                {
+                    lines[i] = ((Processor)processors[i]).ToFileString();
+                }
                 File.WriteAllLines(path, lines, Encoding.GetEncoding(1251));
-                Console.WriteLine($"Данные сохранены в {path}");
+                Console.WriteLine(string.Format("Данные сохранены в {0}", path));
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка сохранения файла: {ex.Message}");
+                Console.WriteLine(string.Format("Ошибка сохранения файла: {0}", ex.Message));
                 return false;
             }
         }
@@ -126,51 +141,140 @@ namespace TxtPriceListProcessor
             Console.WriteLine(new string('-', 80));
             for (int i = 0; i < processors.Count; i++)
             {
-                Console.WriteLine($"{i + 1}. {processors[i]}");
+                Console.WriteLine(string.Format("{0}. {1}", i + 1, processors[i]));
             }
         }
 
-        public void SortByName() => processors.Sort((a, b) => a.Name.CompareTo(b.Name));
-        public void SortByPrice() => processors.Sort((a, b) => a.Price.CompareTo(b.Price));
-        public void SortBySocket() => processors.Sort((a, b) => a.Socket.CompareTo(b.Socket));
-        public void SortByCores() => processors.Sort((a, b) => a.Cores.CompareTo(b.Cores));
-        public void SortByFrequency() => processors.Sort((a, b) => a.Frequency.CompareTo(b.Frequency));
+        public void SortByName() 
+        {
+            processors.Sort(new NameComparer());
+        }
 
-        public List<Processor> SearchByName(string namePart) => 
-            processors.Where(p => p.Name.Contains(namePart)).ToList();
+        public void SortByPrice() 
+        {
+            processors.Sort(new PriceComparer());
+        }
 
-        public List<Processor> SearchByPrice(decimal maxPrice) => 
-            processors.Where(p => p.Price <= maxPrice).ToList();
+        public void SortBySocket() 
+        {
+            processors.Sort(new SocketComparer());
+        }
 
-        public List<Processor> SearchBySocket(string socket) => 
-            processors.Where(p => p.Socket.Equals(socket, StringComparison.OrdinalIgnoreCase)).ToList();
+        public void SortByCores() 
+        {
+            processors.Sort(new CoresComparer());
+        }
 
-        public List<Processor> SearchByCores(int minCores) => 
-            processors.Where(p => p.Cores >= minCores).ToList();
+        public void SortByFrequency() 
+        {
+            processors.Sort(new FrequencyComparer());
+        }
 
-        public int Count => processors.Count;
-        public string CurrentFilePath => currentFilePath;
+        public ArrayList SearchByName(string namePart)
+        {
+            ArrayList results = new ArrayList();
+            foreach (Processor p in processors)
+            {
+                if (p.Name.IndexOf(namePart) >= 0)
+                    results.Add(p);
+            }
+            return results;
+        }
+
+        public ArrayList SearchByPrice(decimal maxPrice)
+        {
+            ArrayList results = new ArrayList();
+            foreach (Processor p in processors)
+            {
+                if (p.Price <= maxPrice)
+                    results.Add(p);
+            }
+            return results;
+        }
+
+        public ArrayList SearchBySocket(string socket)
+        {
+            ArrayList results = new ArrayList();
+            foreach (Processor p in processors)
+            {
+                if (p.Socket.ToLower() == socket.ToLower())
+                    results.Add(p);
+            }
+            return results;
+        }
+
+        public ArrayList SearchByCores(int minCores)
+        {
+            ArrayList results = new ArrayList();
+            foreach (Processor p in processors)
+            {
+                if (p.Cores >= minCores)
+                    results.Add(p);
+            }
+            return results;
+        }
+
+        public int Count { get { return processors.Count; } }
+        public string CurrentFilePath { get { return currentFilePath; } }
+
+        private class NameComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                return string.Compare(((Processor)x).Name, ((Processor)y).Name);
+            }
+        }
+
+        private class PriceComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                return ((Processor)x).Price.CompareTo(((Processor)y).Price);
+            }
+        }
+
+        private class SocketComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                return string.Compare(((Processor)x).Socket, ((Processor)y).Socket);
+            }
+        }
+
+        private class CoresComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                return ((Processor)x).Cores.CompareTo(((Processor)y).Cores);
+            }
+        }
+
+        private class FrequencyComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                return ((Processor)x).Frequency.CompareTo(((Processor)y).Frequency);
+            }
+        }
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            // Установка кодировок для правильного отображения русских символов
             Console.OutputEncoding = Encoding.GetEncoding(866);
             Console.InputEncoding = Encoding.GetEncoding(1251);
 
             PriceListManager manager = new PriceListManager();
             Console.WriteLine("=== Управление прайс-листом процессоров ===");
 
-            // Загрузка файла
             LoadFile(manager);
 
             bool running = true;
             while (running)
             {
                 Console.WriteLine("\nГлавное меню:");
-                Console.WriteLine($"Текущий файл: {manager.CurrentFilePath}");
+                Console.WriteLine(string.Format("Текущий файл: {0}", manager.CurrentFilePath));
                 Console.WriteLine("1. Просмотреть все процессоры");
                 Console.WriteLine("2. Добавить процессор");
                 Console.WriteLine("3. Удалить процессор");
@@ -181,7 +285,8 @@ namespace TxtPriceListProcessor
                 Console.WriteLine("8. Выход");
                 Console.Write("Выберите действие: ");
 
-                switch (Console.ReadLine())
+                string choice = Console.ReadLine();
+                switch (choice)
                 {
                     case "1":
                         manager.DisplayAll();
@@ -229,15 +334,15 @@ namespace TxtPriceListProcessor
         {
             Console.Write("\nВведите путь к файлу .txt (Enter для processors.txt): ");
             string filePath = Console.ReadLine();
-            filePath = string.IsNullOrWhiteSpace(filePath) ? "processors.txt" : filePath;
+            filePath = (filePath == null || filePath.Trim() == "") ? "processors.txt" : filePath;
 
             if (!manager.LoadFromTxtFile(filePath) && manager.Count == 0)
             {
                 Console.WriteLine("\nДобавлены демонстрационные данные:");
-                manager.AddProcessor(new Processor("Intel Core i5-12400", 18990, "LGA1700", 6, 2.5));
-                manager.AddProcessor(new Processor("AMD Ryzen 5 5600X", 17990, "AM4", 6, 3.7));
-                manager.AddProcessor(new Processor("Intel Core i7-12700K", 34990, "LGA1700", 12, 3.6));
-                manager.AddProcessor(new Processor("AMD Ryzen 7 5800X3D", 32990, "AM4", 8, 3.4));
+                manager.AddProcessor(new Processor("Intel Core i5-12400", 18990m, "LGA1700", 6, 2.5));
+                manager.AddProcessor(new Processor("AMD Ryzen 5 5600X", 17990m, "AM4", 6, 3.7));
+                manager.AddProcessor(new Processor("Intel Core i7-12700K", 34990m, "LGA1700", 12, 3.6));
+                manager.AddProcessor(new Processor("AMD Ryzen 7 5800X3D", 32990m, "AM4", 8, 3.4));
                 manager.DisplayAll();
             }
         }
@@ -271,7 +376,8 @@ namespace TxtPriceListProcessor
             if (manager.Count == 0) return;
 
             Console.Write("\nВведите номер процессора для удаления: ");
-            if (int.TryParse(Console.ReadLine(), out int index) && index > 0 && index <= manager.Count)
+            int index;
+            if (int.TryParse(Console.ReadLine(), out index) && index > 0 && index <= manager.Count)
             {
                 if (manager.RemoveProcessor(index - 1))
                     Console.WriteLine("Процессор удален!");
@@ -294,7 +400,8 @@ namespace TxtPriceListProcessor
             Console.WriteLine("5. Частоте");
             Console.Write("Выберите критерий: ");
 
-            switch (Console.ReadLine())
+            string choice = Console.ReadLine();
+            switch (choice)
             {
                 case "1": manager.SortByName(); break;
                 case "2": manager.SortByPrice(); break;
@@ -317,8 +424,9 @@ namespace TxtPriceListProcessor
             Console.WriteLine("4. Количеству ядер (минимальному)");
             Console.Write("Выберите критерий: ");
 
-            List<Processor> results = null;
-            switch (Console.ReadLine())
+            string choice = Console.ReadLine();
+            ArrayList results = null;
+            switch (choice)
             {
                 case "1":
                     Console.Write("Введите часть названия: ");
@@ -343,9 +451,9 @@ namespace TxtPriceListProcessor
 
             if (results != null && results.Count > 0)
             {
-                Console.WriteLine($"\nНайдено {results.Count} процессоров:");
+                Console.WriteLine(string.Format("\nНайдено {0} процессоров:", results.Count));
                 Console.WriteLine(new string('-', 80));
-                foreach (var p in results)
+                foreach (Processor p in results)
                 {
                     Console.WriteLine(p);
                 }
@@ -360,9 +468,9 @@ namespace TxtPriceListProcessor
         {
             Console.Write("\nВведите путь для сохранения (Enter для текущего файла): ");
             string path = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(path))
+            if (path == null || path.Trim() == "")
             {
-                manager.SaveToTxtFile();
+                manager.SaveToTxtFile(null);
             }
             else
             {
