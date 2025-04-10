@@ -1,17 +1,43 @@
-#define IDR_MENU1                       101
-#define IDD_DIALOG1                     102 // Диалог ввода данных
-#define IDD_DIALOG2                     103 // Диалог вывода результатов
-#define IDC_EDIT1                       1001
-#define IDC_EDIT2                       1002
-#define IDC_EDIT3                       1003
-#define IDC_LIST1                       1004
-#define IDC_STATIC_XN                   1005
-#define IDC_STATIC_XK                   1006
-#define IDC_STATIC_N                    1007
-#define ID_FUNCTION_INPUT               40001
-#define ID_FUNCTION_CALCULATE           40002
-#define ID_FUNCTION_GRAPH               40003
-#define ID_ABOUT                        40004
-#define ID_ACCEL_INPUT                  40005
-#define ID_ACCEL_CALCULATE              40006
-#define ID_ACCEL_GRAPH                  40007
+#include "resource.h"
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "&Функция"
+    BEGIN
+        MENUITEM "&Ввод данных\tCtrl+I", ID_FUNCTION_INPUT
+        MENUITEM "&Расчет функции\tCtrl+C", ID_FUNCTION_CALCULATE
+        MENUITEM "&Отобразить график\tCtrl+G", ID_FUNCTION_GRAPH
+    END
+    MENUITEM "&О программе", ID_ABOUT
+END
+
+IDD_DIALOG1 DIALOGEX 0, 0, 220, 140
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Ввод данных"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON "OK", IDOK, 100, 120, 50, 14
+    PUSHBUTTON "Отмена", IDCANCEL, 160, 120, 50, 14
+    LTEXT "Начало интервала (xn):", IDC_STATIC_XN, 10, 10, 80, 8
+    EDITTEXT IDC_EDIT1, 100, 10, 100, 14
+    LTEXT "Конец интервала (xk):", IDC_STATIC_XK, 10, 30, 80, 8
+    EDITTEXT IDC_EDIT2, 100, 30, 100, 14
+    LTEXT "Число точек (N):", IDC_STATIC_N, 10, 50, 80, 8
+    EDITTEXT IDC_EDIT3, 100, 50, 100, 14
+END
+
+IDD_DIALOG2 DIALOGEX 0, 0, 300, 250
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Результаты расчета"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON "OK", IDOK, 245, 230, 50, 14
+    CONTROL "", IDC_LIST1, "SysListBox", LBS_STANDARD | WS_VSCROLL, 10, 10, 280, 210
+END
+
+IDR_MENU1 ACCELERATOR
+BEGIN
+    "I", ID_FUNCTION_INPUT, VIRTKEY, CONTROL
+    "C", ID_FUNCTION_CALCULATE, VIRTKEY, CONTROL
+    "G", ID_FUNCTION_GRAPH, VIRTKEY, CONTROL
+END
