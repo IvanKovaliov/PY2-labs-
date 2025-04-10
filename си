@@ -106,3 +106,147 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
             // Рисование сетки
             DrawGrid(hdc, clientRect, minY, maxY, scaleX, scaleY);
+
+
+            // Рисование графика
+            HPEN hPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
+            SelectObject(hdc, hPen);
+            MoveToEx(hdc, (int)((X[0] - xn) * scaleX), (int)(clientRect.bottom - (Y[0] - minY) * scaleY), NULL);
+            for (int i = 1; i < N; i++) {
+                LineTo(hdc, (int)((X[i] - xn) * scaleX), (int)(clientRect.bottom - (Y[i] - minY) * scaleY));
+            }
+            DeleteObject(hPen);
+
+            // Рисование осей
+            HPEN hAxisPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+            SelectObject(hdc, hAxisPen);
+            MoveToEx(hdc, 0, zeroY, NULL);
+            LineTo(hdc, clientRect.right, zeroY);
+            MoveToEx(hdc, 0, 0, NULL);
+            LineTo(hdc, 0, clientRect.bottom);
+            DeleteObject(hAxisPen);
+        }
+        EndPaint(hWnd, &ps);
+        break;
+    }
+
+    case WM_DESTROY:
+        if (X) delete[] X;
+        if (Y) delete[] Y;
+        DeleteObject(hFont);
+        PostQuitMessage(0);
+        break;
+
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+// Рисование сетки
+void DrawGrid(HDC hdc, RECT clientRect, double minY, double maxY, double scaleX, double scaleY) {
+    HPEN hGridPen = CreatePen(PS_DOT, 1, RGB(128, 128, 128));
+    SelectObject(hdc, hGridPen);
+
+    // Горизонтальные линии
+    for (int y = 0; y <= clientRect.bottom; y += GRID_STEP_Y) {
+        MoveToEx(hdc, 0, y, NULL);
+        LineTo(hdc, clientRect.right, y);
+    }
+
+    // Вертикальные линии
+    for (int x = 0; x <= clientRect.right; x += GRID_STEP_X) {
+        MoveToEx(hdc, x, 0, NULL);
+        LineTo(hdc, x, clientRect.bottom);
+    }
+
+    DeleteObject(hGridPen);
+}
+
+// Диалог ввода данных
+INT_PTR CALLBACK InputDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+    TCHAR buf[32];
+    switch (message) {
+    case WM_INITDIALOG:
+        _stprintf_s(buf, _T("%.3f"), xn);
+        SetDlgItemText(hDlg, IDC_EDIT1, buf);
+        _stprintf_s(buf, _T("%.3f"), xk);
+        SetDlgItemText(hDlg, IDC_EDIT2, buf);
+        _stprintf_s(buf, _T("%d"), N);
+        SetDlgItemText(hDlg, IDC_EDIT3, buf);
+        return TRUE;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDOK:
+            GetDlgItemText(hDlg, IDC_EDIT1, buf, 32);
+            xn = _wtof(buf);
+            GetDlgItemText(hDlg, IDC_EDIT2, buf, 32);
+            xk = _wtof(buf);
+            GetDlgItemText(hDlg, IDC_EDIT3, buf, 32);
+            N = _wtoi(buf);
+            if (N <= 0 || xn >= xk) {
+                MessageBox(hDlg, _T("Ошибка: проверьте введенные данные!"), _T("Ошибка"), MB_OK | MB_ICONERROR);
+                return FALSE;
+            }
+            EndDialog(hDlg, IDOK);
+            return TRUE;
+
+        case IDCANCEL:
+            EndDialog(hDlg, IDCANCEL);
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+// Диалог вывода результатов
+INT_PTR CALLBACK ResultDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+    TCHAR buf[128];
+    switch (message) {
+    case WM_INITDIALOG:
+        SendDlgItemMessage(hDlg, IDC_LIST1, LB_RESETCONTENT, 0, 0);
+        for (int i = 0; i < N; i++) {
+            _stprintf_s(buf, _T("%d: X = %.3f, Y = %.3f"), i, X[i], Y[i]);
+            SendDlgItemMessage(hDlg, IDC_LIST1, LB_ADDSTRING, 0, (LPARAM)buf);
+        }
+        return TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK) {
+            EndDialog(hDlg, IDOK);
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+// Расчет функции
+double CalculateFunction(double x) {
+    return 30 * sin(5 - 3 * x);
+}
+
+// Точка входа
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE, LPTSTR, int nCmdShow) {
+    hInst = hInstance;
+    RegisterWindowClass();
+
+    HWND hWnd = CreateWindow(_T("Lab3Window"), _T("Lab 17 Variant 3"), WS_OVERLAPPEDWINDOW,
+                             CW_USEDEFAULT, 0, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, NULL, NULL, hInst, NULL);
+    HACCEL hAccel = LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_MENU1));
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+
+
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        if (!IsDialogMessage(hWnd, &msg)) {
+            TranslateAccelerator(hWnd, hAccel, &msg);
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+    return (int)msg.wParam;
+}
