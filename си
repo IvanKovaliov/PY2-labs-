@@ -1,43 +1,108 @@
+#include <windows.h>
+#include <tchar.h>
+#include <math.h>
 #include "resource.h"
 
-IDR_MENU1 MENU
-BEGIN
-    POPUP "&Функция"
-    BEGIN
-        MENUITEM "&Ввод данных\tCtrl+I", ID_FUNCTION_INPUT
-        MENUITEM "&Расчет функции\tCtrl+C", ID_FUNCTION_CALCULATE
-        MENUITEM "&Отобразить график\tCtrl+G", ID_FUNCTION_GRAPH
-    END
-    MENUITEM "&О программе", ID_ABOUT
-END
+#define INITIAL_WINDOW_WIDTH 450
+#define INITIAL_WINDOW_HEIGHT 200
+#define GRID_STEP_X 50
+#define GRID_STEP_Y 50
 
-IDD_DIALOG1 DIALOGEX 0, 0, 220, 140
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Ввод данных"
-FONT 8, "MS Sans Serif"
-BEGIN
-    DEFPUSHBUTTON "OK", IDOK, 100, 120, 50, 14
-    PUSHBUTTON "Отмена", IDCANCEL, 160, 120, 50, 14
-    LTEXT "Начало интервала (xn):", IDC_STATIC_XN, 10, 10, 80, 8
-    EDITTEXT IDC_EDIT1, 100, 10, 100, 14
-    LTEXT "Конец интервала (xk):", IDC_STATIC_XK, 10, 30, 80, 8
-    EDITTEXT IDC_EDIT2, 100, 30, 100, 14
-    LTEXT "Число точек (N):", IDC_STATIC_N, 10, 50, 80, 8
-    EDITTEXT IDC_EDIT3, 100, 50, 100, 14
-END
+HINSTANCE hInst;
+double* X = NULL;
+double* Y = NULL;
+int N = 0;
+double xn = 0.0, xk = 0.0;
+BOOL isCalculated = FALSE;
 
-IDD_DIALOG2 DIALOGEX 0, 0, 300, 250
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Результаты расчета"
-FONT 8, "MS Sans Serif"
-BEGIN
-    DEFPUSHBUTTON "OK", IDOK, 245, 230, 50, 14
-    CONTROL "", IDC_LIST1, "SysListBox", LBS_STANDARD | WS_VSCROLL, 10, 10, 280, 210
-END
+// Прототипы функций
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK InputDlgProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK ResultDlgProc(HWND, UINT, WPARAM, LPARAM);
+double CalculateFunction(double x);
+void DrawGrid(HDC hdc, RECT clientRect, double minY, double maxY, double scaleX, double scaleY);
 
-IDR_MENU1 ACCELERATOR
-BEGIN
-    "I", ID_FUNCTION_INPUT, VIRTKEY, CONTROL
-    "C", ID_FUNCTION_CALCULATE, VIRTKEY, CONTROL
-    "G", ID_FUNCTION_GRAPH, VIRTKEY, CONTROL
-END
+// Регистрация класса окна
+void RegisterWindowClass() {
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInst;
+    wc.hCursor = LoadCursor(NULL, IDC_SIZEALL);
+    wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
+    wc.lpszClassName = _T("Lab3Window");
+    RegisterClass(&wc);
+}
+
+// Оконная процедура
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    static HFONT hFont = CreateFont(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+                                    OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                                    DEFAULT_PITCH | FF_SWISS, _T("Arial"));
+    static int windowWidth = INITIAL_WINDOW_WIDTH;
+    static int windowHeight = INITIAL_WINDOW_HEIGHT;
+
+    switch (message) {
+    case WM_SIZE:
+        windowWidth = LOWORD(lParam);
+        windowHeight = HIWORD(lParam);
+        if (isCalculated) InvalidateRect(hWnd, NULL, TRUE);
+        break;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case ID_FUNCTION_INPUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hWnd, InputDlgProc);
+            isCalculated = FALSE;
+            InvalidateRect(hWnd, NULL, TRUE);
+            break;
+        case ID_FUNCTION_CALCULATE:
+            if (N > 0) {
+                if (X) delete[] X;
+                if (Y) delete[] Y;
+                X = new double[N];
+                Y = new double[N];
+                double hx = (xk - xn) / (N - 1);
+                X[0] = xn;
+                for (int i = 0; i < N; i++) {
+                    if (i > 0) X[i] = X[i - 1] + hx;
+                    Y[i] = CalculateFunction(X[i]);
+                }
+                isCalculated = TRUE;
+                DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hWnd, ResultDlgProc);
+            } else {
+                MessageBox(hWnd, _T("Ошибка: число точек должно быть больше 0!"), _T("Ошибка"), MB_OK | MB_ICONERROR);
+            }
+            break;
+        case ID_FUNCTION_GRAPH:
+            if (isCalculated) {
+                InvalidateRect(hWnd, NULL, TRUE);
+            } else {
+                MessageBox(hWnd, _T("Сначала выполните расчет функции!"), _T("Ошибка"), MB_OK | MB_ICONWARNING);
+            }
+            break;
+        case ID_ABOUT:
+            MessageBox(hWnd, _T("Лабораторная работа 17\nВариант 3\nСтудент: [Ваше имя]\nФункция: f(x) = 30*sin(5-3x)"),
+                       _T("О программе"), MB_OK | MB_ICONINFORMATION);
+            break;
+        }
+        break;
+
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        SelectObject(hdc, hFont);
+
+        if (isCalculated && X && Y) {
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            double minY = Y[0], maxY = Y[0];
+            for (int i = 1; i < N; i++) {
+                if (Y[i] < minY) minY = Y[i];
+                if (Y[i] > maxY) maxY = Y[i];
+            }
+            double scaleX = (double)clientRect.right / (xk - xn);
+            double scaleY = (double)clientRect.bottom / (maxY - minY);
+            int zeroY = (int)(clientRect.bottom - (0 - minY) * scaleY);
+
+            // Рисование сетки
+            DrawGrid(hdc, clientRect, minY, maxY, scaleX, scaleY);
