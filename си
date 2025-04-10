@@ -1,14 +1,43 @@
-#define IDR_MENU1                       101
-#define IDD_DIALOG1                     102 // Диалог ввода данных
-#define IDD_DIALOG2                     103 // Диалог вывода результатов
-#define IDC_EDIT1                       1001
-#define IDC_EDIT2                       1002
-#define IDC_EDIT3                       1003
-#define IDC_LIST1                       1004
-#define ID_FUNCTION_INPUT               40001
-#define ID_FUNCTION_CALCULATE           40002
-#define ID_FUNCTION_GRAPH               40003
-#define ID_ABOUT                        40004
-#define ID_ACCEL_INPUT                  40005
-#define ID_ACCEL_CALCULATE              40006
-#define ID_ACCEL_GRAPH                  40007
+#include "resource.h"
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "&Функция"
+    BEGIN
+        MENUITEM "&Ввод данных\tCtrl+I", ID_FUNCTION_INPUT
+        MENUITEM "&Расчет функции\tCtrl+C", ID_FUNCTION_CALCULATE
+        MENUITEM "&Отобразить график\tCtrl+G", ID_FUNCTION_GRAPH
+    END
+    MENUITEM "&О программе", ID_ABOUT
+END
+
+IDD_DIALOG1 DIALOGEX 0, 0, 200, 120
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Ввод данных"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON "OK", IDOK, 90, 100, 50, 14
+    PUSHBUTTON "Отмена", IDCANCEL, 145, 100, 50, 14
+    LTEXT "Начало (xn):", -1, 10, 10, 50, 8
+    EDITTEXT IDC_EDIT1, 60, 10, 80, 14
+    LTEXT "Конец (xk):", -1, 10, 30, 50, 8
+    EDITTEXT IDC_EDIT2, 60, 30, 80, 14
+    LTEXT "Точек (N):", -1, 10, 50, 50, 8
+    EDITTEXT IDC_EDIT3, 60, 50, 80, 14
+END
+
+IDD_DIALOG2 DIALOGEX 0, 0, 250, 200
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Результаты расчета"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON "OK", IDOK, 195, 180, 50, 14
+    CONTROL "", IDC_LIST1, "SysListBox", LBS_STANDARD, 10, 10, 230, 160
+END
+
+IDR_MENU1 ACCELERATOR
+BEGIN
+    "I", ID_FUNCTION_INPUT, VIRTKEY, CONTROL
+    "C", ID_FUNCTION_CALCULATE, VIRTKEY, CONTROL
+    "G", ID_FUNCTION_GRAPH, VIRTKEY, CONTROL
+END
