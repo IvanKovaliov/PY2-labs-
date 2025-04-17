@@ -1,13 +1,19 @@
-#define IDR_MENU1 101
-#define ID_LAB1 40001
-#define ID_LAB2 40002
-#define ID_LAB3 40003
-#define ID_LAB4 40004
-#define ID_LAB5 40005
-#define ID_LAB6 40006
-#define ID_LAB7 40007
-#define ID_LAB8 40008
-#define ID_LAB9 40009
-#define ID_EXIT 40010
-
-#endif // Завершающая директива
+#define IDD_DIALOG1 101
+#define IDD_DIALOG2 102
+#define IDD_DIALOG4 104
+#define IDD_DIALOG5 105
+#define IDD_DIALOG6 106
+#define IDD_DIALOG7 107
+#define IDD_DIALOG8 108
+#define IDD_DIALOG9 109
+#define IDC_INPUT 1001
+#define IDC_OUTPUT 1002
+#define IDC_EXECUTE 1003
+#define IDC_LIST 1004
+#define IDC_NAME 1005
+#define IDC_GROUP 1006
+#define IDC_SCORE 1007
+#define IDC_TITLE 1008
+#define IDC_AUTHOR 1009
+#define IDC_YEAR 1010
+#endif
