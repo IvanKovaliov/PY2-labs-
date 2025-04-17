@@ -1,3 +1,7 @@
+#ifndef IDC_STATIC
+#define IDC_STATIC (-1)
+#endif
+
 #define IDD_DIALOG1 101
 #define IDD_DIALOG2 102
 #define IDD_DIALOG4 104
