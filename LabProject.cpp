@@ -1,46 +1,44 @@
 #include <windows.h>
-#include <iostream>
+#include <commctrl.h>
 #include <vector>
 #include <algorithm>
 #include <string>
 #include <fstream>
 #include <cmath>
-#include <cstdlib>
+#include <sstream>
 
 using namespace std;
 
 // Прототипы функций
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-void lab1_arrayProcessing();
-void lab2_stringProcessing();
+BOOL CALLBACK Lab1DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab2DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab4DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab5DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab6DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab7DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab8DlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK Lab9DlgProc(HWND, UINT, WPARAM, LPARAM);
 void lab3_graphPlotting(HWND);
-void lab4_structProcessing();
-void lab5_fileProcessing();
-void lab6_dynamicMemory();
-void lab7_sortAndSearch();
-void lab8_recursion();
-void lab9_classes();
-void setRussianLocale();
-void clearConsole();
-void setupConsole();
 
 // Структура для лабораторной 4
 struct Student {
-    string name;
+    wstring name;
     int group;
     double averageScore;
 };
 
 // Класс для лабораторной 9
 class Book {
-private:
-    string title;
-    string author;
-    int year;
 public:
-    Book(string t = "", string a = "", int y = 0) : title(t), author(a), year(y) {}
-    void display() {
-        cout << "Название: " << title << ", Автор: " << author << ", Год: " << year << "\n";
+    wstring title;
+    wstring author;
+    int year;
+    Book(wstring t = L"", wstring a = L"", int y = 0) : title(t), author(a), year(y) {}
+    wstring display() {
+        wstringstream ss;
+        ss << L"Название: " << title << L", Автор: " << author << L", Год: " << year;
+        return ss.str();
     }
 };
 
@@ -61,12 +59,21 @@ const int WINDOW_HEIGHT = 200;
 #define ID_LAB9 40009
 #define ID_EXIT 40010
 
+// Идентификаторы элементов управления
+#define IDC_INPUT 1001
+#define IDC_OUTPUT 1002
+#define IDC_EXECUTE 1003
+#define IDC_LIST 1004
+#define IDC_NAME 1005
+#define IDC_GROUP 1006
+#define IDC_SCORE 1007
+#define IDC_TITLE 1008
+#define IDC_AUTHOR 1009
+#define IDC_YEAR 1010
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     hInst = hInstance;
-    setupConsole(); // Инициализация консоли
-    setRussianLocale();
 
-    // Создание класса окна
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance, 
         LoadIcon(NULL, IDI_APPLICATION), LoadCursor(NULL, IDC_SIZEALL), 
         CreateSolidBrush(RGB(192, 192, 192)), NULL, L"LabWindowClass", NULL };
@@ -75,7 +82,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
 
-    // Создание меню
     HMENU hMenu = CreateMenu();
     HMENU hSubMenu = CreatePopupMenu();
     AppendMenu(hSubMenu, MF_STRING, ID_LAB1, L"Лаб. 1: Массивы");
@@ -91,7 +97,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hSubMenu, MF_STRING, ID_EXIT, L"Выход");
     AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hSubMenu, L"Лабораторные работы");
 
-    // Создание окна
     HWND hwnd = CreateWindow(L"LabWindowClass", L"Лабораторные работы", WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, hMenu, hInstance, NULL);
     if (!hwnd) {
@@ -107,7 +112,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    FreeConsole(); // Освобождение консоли при выходе
     return (int)msg.wParam;
 }
 
@@ -116,46 +120,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case ID_LAB1:
-            clearConsole();
-            lab1_arrayProcessing();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG1), hwnd, Lab1DlgProc);
             break;
         case ID_LAB2:
-            clearConsole();
-            lab2_stringProcessing();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG2), hwnd, Lab2DlgProc);
             break;
         case ID_LAB3:
-            clearConsole();
             lab3_graphPlotting(hwnd);
             break;
         case ID_LAB4:
-            clearConsole();
-            lab4_structProcessing();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG4), hwnd, Lab4DlgProc);
             break;
         case ID_LAB5:
-            clearConsole();
-            lab5_fileProcessing();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG5), hwnd, Lab5DlgProc);
             break;
         case ID_LAB6:
-            clearConsole();
-            lab6_dynamicMemory();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG6), hwnd, Lab6DlgProc);
             break;
         case ID_LAB7:
-            clearConsole();
-            lab7_sortAndSearch();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG7), hwnd, Lab7DlgProc);
             break;
         case ID_LAB8:
-            clearConsole();
-            lab8_recursion();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG8), hwnd, Lab8DlgProc);
             break;
         case ID_LAB9:
-            clearConsole();
-            lab9_classes();
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG9), hwnd, Lab9DlgProc);
             break;
         case ID_EXIT:
             DestroyWindow(hwnd);
             break;
-        default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
         }
         break;
     case WM_PAINT: {
@@ -176,83 +169,92 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-void setupConsole() {
-    AllocConsole(); // Создание консоли
-    FILE* fp;
-    freopen_s(&fp, "CONOUT$", "w", stdout); // Перенаправление stdout
-    freopen_s(&fp, "CONIN$", "r", stdin);  // Перенаправление stdin
-    cout.clear(); // Очистка состояния потока
-}
-
-void setRussianLocale() {
-    SetConsoleCP(1251);
-    SetConsoleOutputCP(1251);
-}
-
-void clearConsole() {
-    system("cls");
-}
-
-void lab1_arrayProcessing() {
-    cout << "Лабораторная работа 1: Обработка массивов\n";
-    int n;
-    cout << "Введите размер массива: ";
-    while (!(cin >> n) || n <= 0) {
-        cout << "Ошибка! Введите положительное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    vector<int> arr(n);
-    cout << "Введите " << n << " элементов массива:\n";
-    for (int i = 0; i < n; i++) {
-        while (!(cin >> arr[i])) {
-            cout << "Ошибка! Введите целое число: ";
-            cin.clear();
-            cin.ignore(10000, '\n');
+// Диалоговые процедуры для каждой лабораторной
+BOOL CALLBACK Lab1DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static vector<int> arr;
+    switch (msg) {
+    case WM_INITDIALOG:
+        arr.clear();
+        SetDlgItemText(hwndDlg, IDC_INPUT, L"");
+        SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR buffer[256];
+            GetDlgItemText(hwndDlg, IDC_INPUT, buffer, 256);
+            wstringstream ss(buffer);
+            arr.clear();
+            int num;
+            while (ss >> num) {
+                arr.push_back(num);
+            }
+            if (arr.empty()) {
+                MessageBox(hwndDlg, L"Введите хотя бы одно число!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            sort(arr.begin(), arr.end());
+            wstringstream out;
+            for (vector<int>::iterator it = arr.begin(); it != arr.end(); ++it) {
+                out << *it << L" ";
+            }
+            SetDlgItemText(hwndDlg, IDC_OUTPUT, out.str().c_str());
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
         }
+        break;
     }
-    sort(arr.begin(), arr.end());
-    cout << "\nОтсортированный массив:\n";
-    for (vector<int>::iterator it = arr.begin(); it != arr.end(); ++it) {
-        cout << *it << " ";
-    }
-    cout << "\n\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.ignore();
-    cin.get();
+    return FALSE;
 }
 
-void lab2_stringProcessing() {
-    cout << "Лабораторная работа 2: Обработка строк\n";
-    string str;
-    cout << "Введите строку: ";
-    cin.ignore();
-    getline(cin, str);
-    if (str.empty()) {
-        cout << "Ошибка! Строка не может быть пустой.\n";
-        cout << "Нажмите Enter для возврата в меню...\n";
-        cin.get();
-        return;
-    }
-    int wordCount = 0;
-    bool inWord = false;
-    for (unsigned int i = 0; i < str.length(); ++i) {
-        if (isspace(str[i])) {
-            inWord = false;
-        } else if (!inWord) {
-            inWord = true;
-            wordCount++;
+BOOL CALLBACK Lab2DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_INITDIALOG:
+        SetDlgItemText(hwndDlg, IDC_INPUT, L"");
+        SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR buffer[256];
+            GetDlgItemText(hwndDlg, IDC_INPUT, buffer, 256);
+            wstring str(buffer);
+            if (str.empty()) {
+                MessageBox(hwndDlg, L"Введите строку!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            int wordCount = 0;
+            bool inWord = false;
+            for (unsigned int i = 0; i < str.length(); ++i) {
+                if (iswspace(str[i])) {
+                    inWord = false;
+                } else if (!inWord) {
+                    inWord = true;
+                    wordCount++;
+                }
+            }
+            wstringstream out;
+            out << L"Количество слов: " << wordCount;
+            SetDlgItemText(hwndDlg, IDC_OUTPUT, out.str().c_str());
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
         }
+        break;
     }
-    cout << "Количество слов в строке: " << wordCount << "\n";
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.get();
+    return FALSE;
 }
 
 void lab3_graphPlotting(HWND hwnd) {
-    cout << "Лабораторная работа 3: Построение графика f(x) = 30*sin(5-3x)\n";
     InvalidateRect(hwnd, NULL, TRUE);
     UpdateWindow(hwnd);
-
     HDC hdc = GetDC(hwnd);
     HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 255));
     SelectObject(hdc, hPen);
@@ -280,180 +282,241 @@ void lab3_graphPlotting(HWND hwnd) {
 
     DeleteObject(hPen);
     ReleaseDC(hwnd, hdc);
-    cout << "График построен.\n\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.ignore();
-    cin.get();
+    MessageBox(hwnd, L"График построен. Нажмите OK для возврата.", L"Лаб. 3", MB_OK | MB_ICONINFORMATION);
 }
 
-void lab4_structProcessing() {
-    cout << "Лабораторная работа 4: Работа со структурами\n";
-    vector<Student> students;
-    int n;
-    cout << "Введите количество студентов: ";
-    while (!(cin >> n) || n <= 0) {
-        cout << "Ошибка! Введите положительное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    cin.ignore();
-    for (int i = 0; i < n; i++) {
-        Student s;
-        cout << "Студент " << i + 1 << ":\n";
-        cout << "Имя: ";
-        getline(cin, s.name);
-        if (s.name.empty()) {
-            cout << "Ошибка! Имя не может быть пустым.\n";
-            i--;
-            continue;
+BOOL CALLBACK Lab4DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static vector<Student> students;
+    switch (msg) {
+    case WM_INITDIALOG:
+        students.clear();
+        SendDlgItemMessage(hwndDlg, IDC_LIST, LB_RESETCONTENT, 0, 0);
+        SetDlgItemText(hwndDlg, IDC_NAME, L"");
+        SetDlgItemText(hwndDlg, IDC_GROUP, L"");
+        SetDlgItemText(hwndDlg, IDC_SCORE, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR name[100], group[10], score[10];
+            GetDlgItemText(hwndDlg, IDC_NAME, name, 100);
+            GetDlgItemText(hwndDlg, IDC_GROUP, group, 10);
+            GetDlgItemText(hwndDlg, IDC_SCORE, score, 10);
+            if (wcslen(name) == 0) {
+                MessageBox(hwndDlg, L"Введите имя студента!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            int g;
+            double s;
+            wstringstream ss1(group), ss2(score);
+            if (!(ss1 >> g) || g <= 0) {
+                MessageBox(hwndDlg, L"Введите корректный номер группы!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            if (!(ss2 >> s) || s < 0 || s > 100) {
+                MessageBox(hwndDlg, L"Введите балл от 0 до 100!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            Student student = { name, g, s };
+            students.push_back(student);
+            wstringstream out;
+            out << L"Имя: " << name << L", Группа: " << g << L", Балл: " << s;
+            SendDlgItemMessage(hwndDlg, IDC_LIST, LB_ADDSTRING, 0, (LPARAM)out.str().c_str());
+            SetDlgItemText(hwndDlg, IDC_NAME, L"");
+            SetDlgItemText(hwndDlg, IDC_GROUP, L"");
+            SetDlgItemText(hwndDlg, IDC_SCORE, L"");
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
         }
-        cout << "Группа: ";
-        while (!(cin >> s.group) || s.group <= 0) {
-            cout << "Ошибка! Введите положительное число: ";
-            cin.clear();
-            cin.ignore(10000, '\n');
-        }
-        cout << "Средний балл: ";
-        while (!(cin >> s.averageScore) || s.averageScore < 0 || s.averageScore > 100) {
-            cout << "Ошибка! Введите число от 0 до 100: ";
-            cin.clear();
-            cin.ignore(10000, '\n');
-        }
-        cin.ignore();
-        students.push_back(s);
+        break;
     }
-    cout << "\nСписок студентов:\n";
-    for (vector<Student>::iterator it = students.begin(); it != students.end(); ++it) {
-        cout << "Имя: " << it->name << ", Группа: " << it->group << ", Средний балл: " << it->averageScore << "\n";
-    }
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.get();
+    return FALSE;
 }
 
-void lab5_fileProcessing() {
-    cout << "Лабораторная работа 5: Работа с файлами\n";
-    ofstream outFile("output.txt");
-    if (!outFile) {
-        cout << "Ошибка создания файла output.txt!\n";
-        cout << "Нажмите Enter для возврата в меню...\n";
-        cin.ignore();
-        cin.get();
-        return;
+BOOL CALLBACK Lab5DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_INITDIALOG:
+        SetDlgItemText(hwndDlg, IDC_INPUT, L"Пример записи в файл.");
+        SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR buffer[256];
+            GetDlgItemText(hwndDlg, IDC_INPUT, buffer, 256);
+            wstring input(buffer);
+            ofstream outFile("output.txt");
+            if (!outFile) {
+                MessageBox(hwndDlg, L"Ошибка создания файла!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            string narrowInput(input.begin(), input.end());
+            outFile << narrowInput;
+            outFile.close();
+
+            ifstream inFile("output.txt");
+            if (!inFile) {
+                MessageBox(hwndDlg, L"Ошибка чтения файла!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            string line, content;
+            while (getline(inFile, line)) {
+                content += line + "\n";
+            }
+            inFile.close();
+            wstring wideContent(content.begin(), content.end());
+            SetDlgItemText(hwndDlg, IDC_OUTPUT, wideContent.c_str());
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
+        }
+        break;
     }
-    outFile << "Пример записи в файл.\n";
-    outFile.close();
-    
-    ifstream inFile("output.txt");
-    if (!inFile) {
-        cout << "Ошибка чтения файла output.txt!\n";
-        cout << "Нажмите Enter для возврата в меню...\n";
-        cin.ignore();
-        cin.get();
-        return;
-    }
-    string line;
-    cout << "Содержимое файла output.txt:\n";
-    while (getline(inFile, line)) {
-        cout << line << "\n";
-    }
-    inFile.close();
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.ignore();
-    cin.get();
+    return FALSE;
 }
 
-void lab6_dynamicMemory() {
-    cout << "Лабораторная работа 6: Динамическая память\n";
-    int rows, cols;
-    cout << "Введите количество строк матрицы: ";
-    while (!(cin >> rows) || rows <= 0) {
-        cout << "Ошибка! Введите положительное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    cout << "Введите количество столбцов матрицы: ";
-    while (!(cin >> cols) || cols <= 0) {
-        cout << "Ошибка! Введите положительное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    int** matrix = new int*[rows];
-    for (int i = 0; i < rows; i++) {
-        matrix[i] = new int[cols];
-        for (int j = 0; j < cols; j++) {
-            matrix[i][j] = rand() % 100;
+BOOL CALLBACK Lab6DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_INITDIALOG:
+        SetDlgItemText(hwndDlg, IDC_INPUT, L"");
+        SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR buffer[256];
+            GetDlgItemText(hwndDlg, IDC_INPUT, buffer, 256);
+            wstringstream ss(buffer);
+            int rows, cols;
+            if (!(ss >> rows >> cols) || rows <= 0 || cols <= 0) {
+                MessageBox(hwndDlg, L"Введите два положительных числа (строки столбцы)!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            int** matrix = new int*[rows];
+            for (int i = 0; i < rows; i++) {
+                matrix[i] = new int[cols];
+                for (int j = 0; j < cols; j++) {
+                    matrix[i][j] = rand() % 100;
+                }
+            }
+            wstringstream out;
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
+                    out << matrix[i][j] << L"\t";
+                }
+                out << L"\n";
+            }
+            for (int i = 0; i < rows; i++) {
+                delete[] matrix[i];
+            }
+            delete[] matrix;
+            SetDlgItemText(hwndDlg, IDC_OUTPUT, out.str().c_str());
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
         }
+        break;
     }
-    cout << "\nСлучайная матрица:\n";
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            cout << matrix[i][j] << "\t";
-        }
-        cout << "\n";
-    }
-    for (int i = 0; i < rows; i++) {
-        delete[] matrix[i];
-    }
-    delete[] matrix;
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.ignore();
-    cin.get();
+    return FALSE;
 }
 
-void lab7_sortAndSearch() {
-    cout << "Лабораторная работа 7: Сортировка и поиск\n";
-    int n;
-    cout << "Введите размер массива: ";
-    while (!(cin >> n) || n <= 0) {
-        cout << "Ошибка! Введите положительное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    vector<int> arr(n);
-    cout << "Введите " << n << " элементов массива:\n";
-    for (int i = 0; i < n; i++) {
-        while (!(cin >> arr[i])) {
-            cout << "Ошибка! Введите целое число: ";
-            cin.clear();
-            cin.ignore(10000, '\n');
+BOOL CALLBACK Lab7DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static vector<int> arr;
+    switch (msg) {
+    case WM_INITDIALOG:
+        arr.clear();
+        SetDlgItemText(hwndDlg, IDC_INPUT, L"");
+        SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR buffer[256];
+            GetDlgItemText(hwndDlg, IDC_INPUT, buffer, 256);
+            wstringstream ss(buffer);
+            arr.clear();
+            int num;
+            while (ss >> num) {
+                arr.push_back(num);
+            }
+            if (arr.empty()) {
+                MessageBox(hwndDlg, L"Введите массив и число для поиска!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            int target;
+            WCHAR targetBuf[10];
+            GetDlgItemText(hwndDlg, IDC_AUTHOR, targetBuf, 10);
+            wstringstream ssTarget(targetBuf);
+            if (!(ssTarget >> target)) {
+                MessageBox(hwndDlg, L"Введите число для поиска!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            sort(arr.begin(), arr.end());
+            wstringstream out;
+            out << L"Отсортированный массив: ";
+            for (vector<int>::iterator it = arr.begin(); it != arr.end(); ++it) {
+                out << *it << L" ";
+            }
+            vector<int>::iterator it = lower_bound(arr.begin(), arr.end(), target);
+            if (it != arr.end() && *it == target) {
+                out << L"\nЧисло " << target << L" найдено на позиции: " << (it - arr.begin());
+            } else {
+                out << L"\nЧисло " << target << L" не найдено.";
+            }
+            SetDlgItemText(hwndDlg, IDC_OUTPUT, out.str().c_str());
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
         }
+        break;
     }
-    sort(arr.begin(), arr.end());
-    cout << "\nОтсортированный массив:\n";
-    for (vector<int>::iterator it = arr.begin(); it != arr.end(); ++it) {
-        cout << *it << " ";
-    }
-    cout << "\n\nВведите число для поиска: ";
-    int target;
-    while (!(cin >> target)) {
-        cout << "Ошибка! Введите целое число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    vector<int>::iterator it = lower_bound(arr.begin(), arr.end(), target);
-    if (it != arr.end() && *it == target) {
-        cout << "Число найдено на позиции: " << (it - arr.begin()) << "\n";
-    } else {
-        cout << "Число не найдено.\n";
-    }
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.ignore();
-    cin.get();
+    return FALSE;
 }
 
-void lab8_recursion() {
-    cout << "Лабораторная работа 8: Рекурсия\n";
-    int n;
-    cout << "Введите число для вычисления факториала: ";
-    while (!(cin >> n) || n < 0) {
-        cout << "Ошибка! Введите неотрицательное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
+BOOL CALLBACK Lab8DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_INITDIALOG:
+        SetDlgItemText(hwndDlg, IDC_INPUT, L"");
+        SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR buffer[256];
+            GetDlgItemText(hwndDlg, IDC_INPUT, buffer, 256);
+            wstringstream ss(buffer);
+            int n;
+            if (!(ss >> n) || n < 0) {
+                MessageBox(hwndDlg, L"Введите неотрицательное число!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            long long factorial(int n);
+            wstringstream out;
+            out << L"Факториал " << n << L" = " << factorial(n);
+            SetDlgItemText(hwndDlg, IDC_OUTPUT, out.str().c_str());
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
+        }
+        break;
     }
-    long long factorial(int n);
-    cout << "Факториал " << n << " = " << factorial(n) << "\n";
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.ignore();
-    cin.get();
+    return FALSE;
 }
 
 long long factorial(int n) {
@@ -461,48 +524,47 @@ long long factorial(int n) {
     return n * factorial(n - 1);
 }
 
-void lab9_classes() {
-    cout << "Лабораторная работа 9: Классы\n";
-    vector<Book> books;
-    int n;
-    cout << "Введите количество книг: ";
-    while (!(cin >> n) || n <= 0) {
-        cout << "Ошибка! Введите положительное число: ";
-        cin.clear();
-        cin.ignore(10000, '\n');
-    }
-    cin.ignore();
-    for (int i = 0; i < n; i++) {
-        string title, author;
-        int year;
-        cout << "Книга " << i + 1 << ":\n";
-        cout << "Название: ";
-        getline(cin, title);
-        if (title.empty()) {
-            cout << "Ошибка! Название не может быть пустым.\n";
-            i--;
-            continue;
+BOOL CALLBACK Lab9DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static vector<Book> books;
+    switch (msg) {
+    case WM_INITDIALOG:
+        books.clear();
+        SendDlgItemMessage(hwndDlg, IDC_LIST, LB_RESETCONTENT, 0, 0);
+        SetDlgItemText(hwndDlg, IDC_TITLE, L"");
+        SetDlgItemText(hwndDlg, IDC_AUTHOR, L"");
+        SetDlgItemText(hwndDlg, IDC_YEAR, L"");
+        return TRUE;
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDC_EXECUTE: {
+            WCHAR title[100], author[100], year[10];
+            GetDlgItemText(hwndDlg, IDC_TITLE, title, 100);
+            GetDlgItemText(hwndDlg, IDC_AUTHOR, author, 100);
+            GetDlgItemText(hwndDlg, IDC_YEAR, year, 10);
+            if (wcslen(title) == 0 || wcslen(author) == 0) {
+                MessageBox(hwndDlg, L"Введите название и автора!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            int y;
+            wstringstream ss(year);
+            if (!(ss >> y) || y < 0) {
+                MessageBox(hwndDlg, L"Введите корректный год!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            Book book(title, author, y);
+            books.push_back(book);
+            SendDlgItemMessage(hwndDlg, IDC_LIST, LB_ADDSTRING, 0, (LPARAM)book.display().c_str());
+            SetDlgItemText(hwndDlg, IDC_TITLE, L"");
+            SetDlgItemText(hwndDlg, IDC_AUTHOR, L"");
+            SetDlgItemText(hwndDlg, IDC_YEAR, L"");
+            }
+            break;
+        case IDOK:
+        case IDCANCEL:
+            EndDialog(hwndDlg, 0);
+            return TRUE;
         }
-        cout << "Автор: ";
-        getline(cin, author);
-        if (author.empty()) {
-            cout << "Ошибка! Автор не может быть пустым.\n";
-            i--;
-            continue;
-        }
-        cout << "Год издания: ";
-        while (!(cin >> year) || year < 0) {
-            cout << "Ошибка! Введите неотрицательное число: ";
-            cin.clear();
-            cin.ignore(10000, '\n');
-        }
-        cin.ignore();
-        books.push_back(Book(title, author, year));
+        break;
     }
-    cout << "\nСписок книг:\n";
-    for (vector<Book>::iterator it = books.begin(); it != books.end(); ++it) {
-        it->display();
-    }
-    cout << "\nЗадание выполнено. Нажмите Enter для возврата в меню...\n";
-    cin.get();
+    return FALSE;
 }
