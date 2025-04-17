@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cmath>
 #include <sstream>
+#include "resource.h"
 
 using namespace std;
 
@@ -59,20 +60,9 @@ const int WINDOW_HEIGHT = 200;
 #define ID_LAB9 40009
 #define ID_EXIT 40010
 
-// Идентификаторы элементов управления
-#define IDC_INPUT 1001
-#define IDC_OUTPUT 1002
-#define IDC_EXECUTE 1003
-#define IDC_LIST 1004
-#define IDC_NAME 1005
-#define IDC_GROUP 1006
-#define IDC_SCORE 1007
-#define IDC_TITLE 1008
-#define IDC_AUTHOR 1009
-#define IDC_YEAR 1010
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     hInst = hInstance;
+    InitCommonControls(); // Инициализация общих элементов управления
 
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance, 
         LoadIcon(NULL, IDI_APPLICATION), LoadCursor(NULL, IDC_SIZEALL), 
@@ -169,7 +159,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-// Диалоговые процедуры для каждой лабораторной
+// Диалоговые процедуры
 BOOL CALLBACK Lab1DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
     static vector<int> arr;
     switch (msg) {
@@ -436,6 +426,7 @@ BOOL CALLBACK Lab7DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
     case WM_INITDIALOG:
         arr.clear();
         SetDlgItemText(hwndDlg, IDC_INPUT, L"");
+        SetDlgItemText(hwndDlg, IDC_AUTHOR, L"");
         SetDlgItemText(hwndDlg, IDC_OUTPUT, L"");
         return TRUE;
     case WM_COMMAND:
@@ -450,7 +441,7 @@ BOOL CALLBACK Lab7DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
                 arr.push_back(num);
             }
             if (arr.empty()) {
-                MessageBox(hwndDlg, L"Введите массив и число для поиска!", L"Ошибка", MB_OK | MB_ICONERROR);
+                MessageBox(hwndDlg, L"Введите массив!", L"Ошибка", MB_OK | MB_ICONERROR);
                 return TRUE;
             }
             int target;
@@ -538,6 +529,23 @@ BOOL CALLBACK Lab9DlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
         switch (LOWORD(wParam)) {
         case IDC_EXECUTE: {
             WCHAR title[100], author[100], year[10];
+            GetDlgItemText(hwndDlg, IDC_TITLE, title, 100);
+            GetDlgItemText(hwndDlg, IDC_AUTHOR, author, 100);
+            GetDlgItemText(hwndDlg, IDC_YEAR, year, 10);
+            if (wcslen(title) == 0 || wcslen(author) == 0) {
+                MessageBox(hwndDlg, L"Введите название и автора!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            int y;
+            wstringstream ss(year);
+            if (!(ss >> y) || y < 0) {
+                MessageBox(hwndDlg, L"Введите корректный год!", L"Ошибка", MB_OK | MB_ICONERROR);
+                return TRUE;
+            }
+            Book book(title, author, y);
+            books.push_back(book);
+            SendDlgItemMessage(hwndDlg, IDC_LIST, LB_ADDSTRING, 0, (LPARAM)book.display().c_str());
+            SetDlgItemText(hwndDlg, IDC_TITLE WCHAR title[100], author[100], year[10];
             GetDlgItemText(hwndDlg, IDC_TITLE, title, 100);
             GetDlgItemText(hwndDlg, IDC_AUTHOR, author, 100);
             GetDlgItemText(hwndDlg, IDC_YEAR, year, 10);
