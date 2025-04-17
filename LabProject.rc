@@ -1,0 +1,19 @@
+#include "resource.h"
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "Лабораторные работы"
+    BEGIN
+        MENUITEM "Лаб. 1: Массивы", ID_LAB1
+        MENUITEM "Лаб. 2: Строки", ID_LAB2
+        MENUITEM "Лаб. 3: График", ID_LAB3
+        MENUITEM "Лаб. 4: Структуры", ID_LAB4
+        MENUITEM "Лаб. 5: Файлы", ID_LAB5
+        MENUITEM "Лаб. 6: Динамическая память", ID_LAB6
+        MENUITEM "Лаб. 7: Сортировка и поиск", ID_LAB7
+        MENUITEM "Лаб. 8: Рекурсия", ID_LAB8
+        MENUITEM "Лаб. 9: Классы", ID_LAB9
+        MENUITEM SEPARATOR
+        MENUITEM "Выход", ID_EXIT
+    END
+END
