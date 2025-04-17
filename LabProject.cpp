@@ -22,6 +22,7 @@ void lab8_recursion();
 void lab9_classes();
 void setRussianLocale();
 void clearConsole();
+void setupConsole();
 
 // Структура для лабораторной 4
 struct Student {
@@ -62,6 +63,7 @@ const int WINDOW_HEIGHT = 200;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     hInst = hInstance;
+    setupConsole(); // Инициализация консоли
     setRussianLocale();
 
     // Создание класса окна
@@ -105,6 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    FreeConsole(); // Освобождение консоли при выходе
     return (int)msg.wParam;
 }
 
@@ -158,7 +161,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        // Очистка окна (светло-серый фон)
         RECT rect;
         GetClientRect(hwnd, &rect);
         FillRect(hdc, &rect, CreateSolidBrush(RGB(192, 192, 192)));
@@ -174,13 +176,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
+void setupConsole() {
+    AllocConsole(); // Создание консоли
+    FILE* fp;
+    freopen_s(&fp, "CONOUT$", "w", stdout); // Перенаправление stdout
+    freopen_s(&fp, "CONIN$", "r", stdin);  // Перенаправление stdin
+    cout.clear(); // Очистка состояния потока
+}
+
 void setRussianLocale() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 }
 
 void clearConsole() {
-    system("cls"); // Очистка консоли для чистоты интерфейса
+    system("cls");
 }
 
 void lab1_arrayProcessing() {
@@ -202,7 +212,7 @@ void lab1_arrayProcessing() {
         }
     }
     sort(arr.begin(), arr.end());
-    cout << "Отсортированный массив:\n";
+    cout << "\nОтсортированный массив:\n";
     for (vector<int>::iterator it = arr.begin(); it != arr.end(); ++it) {
         cout << *it << " ";
     }
@@ -240,7 +250,6 @@ void lab2_stringProcessing() {
 
 void lab3_graphPlotting(HWND hwnd) {
     cout << "Лабораторная работа 3: Построение графика f(x) = 30*sin(5-3x)\n";
-    // Очистка окна перед рисованием
     InvalidateRect(hwnd, NULL, TRUE);
     UpdateWindow(hwnd);
 
@@ -253,13 +262,11 @@ void lab3_graphPlotting(HWND hwnd) {
     double scaleX = 50.0;
     double scaleY = 50.0;
 
-    // Оси координат
     MoveToEx(hdc, 0, centerY, NULL);
     LineTo(hdc, WINDOW_WIDTH, centerY);
     MoveToEx(hdc, centerX, 0, NULL);
     LineTo(hdc, centerX, WINDOW_HEIGHT);
 
-    // Построение графика
     for (int px = 0; px < WINDOW_WIDTH; px++) {
         double x = (px - centerX) / scaleX;
         double y = 30 * sin(5 - 3 * x);
