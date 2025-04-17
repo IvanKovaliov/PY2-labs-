@@ -5,7 +5,6 @@
 #include <string>
 #include <fstream>
 #include <cmath>
-#include "resource.h"
 
 using namespace std;
 
@@ -47,18 +46,47 @@ HINSTANCE hInst;
 const int WINDOW_WIDTH = 450;
 const int WINDOW_HEIGHT = 200;
 
+// Идентификаторы меню
+#define ID_LAB1 40001
+#define ID_LAB2 40002
+#define ID_LAB3 40003
+#define ID_LAB4 40004
+#define ID_LAB5 40005
+#define ID_LAB6 40006
+#define ID_LAB7 40007
+#define ID_LAB8 40008
+#define ID_LAB9 40009
+#define ID_EXIT 40010
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     hInst = hInstance;
     setRussianLocale();
 
+    // Создание класса окна
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, WndProc, 0, 0, hInstance, 
         LoadIcon(NULL, IDI_APPLICATION), LoadCursor(NULL, IDC_SIZEALL), 
         CreateSolidBrush(RGB(192, 192, 192)), NULL, L"LabWindowClass", NULL };
     RegisterClassEx(&wc);
 
+    // Создание меню
+    HMENU hMenu = CreateMenu();
+    HMENU hSubMenu = CreatePopupMenu();
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB1, L"Лаб. 1: Массивы");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB2, L"Лаб. 2: Строки");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB3, L"Лаб. 3: График");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB4, L"Лаб. 4: Структуры");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB5, L"Лаб. 5: Файлы");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB6, L"Лаб. 6: Динамическая память");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB7, L"Лаб. 7: Сортировка и поиск");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB8, L"Лаб. 8: Рекурсия");
+    AppendMenu(hSubMenu, MF_STRING, ID_LAB9, L"Лаб. 9: Классы");
+    AppendMenu(hSubMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hSubMenu, MF_STRING, ID_EXIT, L"Выход");
+    AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hSubMenu, L"Лабораторные работы");
+
+    // Создание окна
     HWND hwnd = CreateWindow(L"LabWindowClass", L"Лабораторные работы", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, 
-        LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU1)), hInstance, NULL);
+        CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH, WINDOW_HEIGHT, NULL, hMenu, hInstance, NULL);
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
@@ -112,6 +140,10 @@ void lab1_arrayProcessing() {
     int n;
     cout << "Введите размер массива: ";
     cin >> n;
+    if (n <= 0) {
+        cout << "Некорректный размер!\n";
+        return;
+    }
     vector<int> arr(n);
     cout << "Введите элементы массива:\n";
     for (int i = 0; i < n; i++) {
@@ -122,7 +154,9 @@ void lab1_arrayProcessing() {
     for (vector<int>::iterator it = arr.begin(); it != arr.end(); ++it) {
         cout << *it << " ";
     }
-    cout << "\n";
+    cout << "\nНажмите Enter для возврата в меню...\n";
+    cin.ignore();
+    cin.get();
 }
 
 void lab2_stringProcessing() {
@@ -142,6 +176,8 @@ void lab2_stringProcessing() {
         }
     }
     cout << "Количество слов в строке: " << wordCount << "\n";
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.get();
 }
 
 void lab3_graphPlotting(HWND hwnd) {
@@ -173,6 +209,9 @@ void lab3_graphPlotting(HWND hwnd) {
 
     DeleteObject(hPen);
     ReleaseDC(hwnd, hdc);
+    cout << "График построен. Нажмите Enter для возврата в меню...\n";
+    cin.ignore();
+    cin.get();
 }
 
 void lab4_structProcessing() {
@@ -181,6 +220,10 @@ void lab4_structProcessing() {
     int n;
     cout << "Введите количество студентов: ";
     cin >> n;
+    if (n <= 0) {
+        cout << "Некорректное количество!\n";
+        return;
+    }
     cin.ignore();
     for (int i = 0; i < n; i++) {
         Student s;
@@ -197,6 +240,8 @@ void lab4_structProcessing() {
     for (vector<Student>::iterator it = students.begin(); it != students.end(); ++it) {
         cout << "Имя: " << it->name << ", Группа: " << it->group << ", Средний балл: " << it->averageScore << "\n";
     }
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.get();
 }
 
 void lab5_fileProcessing() {
@@ -220,6 +265,9 @@ void lab5_fileProcessing() {
         cout << line << "\n";
     }
     inFile.close();
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.ignore();
+    cin.get();
 }
 
 void lab6_dynamicMemory() {
@@ -227,6 +275,10 @@ void lab6_dynamicMemory() {
     int rows, cols;
     cout << "Введите количество строк и столбцов матрицы: ";
     cin >> rows >> cols;
+    if (rows <= 0 || cols <= 0) {
+        cout << "Некорректные размеры!\n";
+        return;
+    }
     int** matrix = new int*[rows];
     for (int i = 0; i < rows; i++) {
         matrix[i] = new int[cols];
@@ -245,6 +297,9 @@ void lab6_dynamicMemory() {
         delete[] matrix[i];
     }
     delete[] matrix;
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.ignore();
+    cin.get();
 }
 
 void lab7_sortAndSearch() {
@@ -252,6 +307,10 @@ void lab7_sortAndSearch() {
     int n;
     cout << "Введите размер массива: ";
     cin >> n;
+    if (n <= 0) {
+        cout << "Некорректный размер!\n";
+        return;
+    }
     vector<int> arr(n);
     cout << "Введите элементы массива:\n";
     for (int i = 0; i < n; i++) {
@@ -271,6 +330,9 @@ void lab7_sortAndSearch() {
     } else {
         cout << "Число не найдено.\n";
     }
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.ignore();
+    cin.get();
 }
 
 void lab8_recursion() {
@@ -278,8 +340,15 @@ void lab8_recursion() {
     cout << "Введите число для вычисления факториала: ";
     int n;
     cin >> n;
+    if (n < 0) {
+        cout << "Факториал не определен для отрицательных чисел!\n";
+        return;
+    }
     long long factorial(int n);
     cout << "Факториал " << n << " = " << factorial(n) << "\n";
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.ignore();
+    cin.get();
 }
 
 long long factorial(int n) {
@@ -293,6 +362,10 @@ void lab9_classes() {
     int n;
     cout << "Введите количество книг: ";
     cin >> n;
+    if (n <= 0) {
+        cout << "Некорректное количество!\n";
+        return;
+    }
     cin.ignore();
     for (int i = 0; i < n; i++) {
         string title, author;
@@ -310,4 +383,6 @@ void lab9_classes() {
     for (vector<Book>::iterator it = books.begin(); it != books.end(); ++it) {
         it->display();
     }
+    cout << "Нажмите Enter для возврата в меню...\n";
+    cin.get();
 }
